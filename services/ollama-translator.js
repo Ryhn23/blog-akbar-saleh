@@ -192,6 +192,54 @@ const UI_DICTIONARY = {
     ar: 'مساحة لتبادل الأفكار، والرؤى النقدية، والحوار العلمي البنّاء.',
     fa: 'فضایی برای تبادل اندیشه، یادداشت‌های انتقادی و گفتگوی علمی سازنده.'
   },
+  hero_default_title: {
+    id: 'Kajian & Pemikiran Keislaman',
+    en: 'Islamic Studies & Scholarly Essays',
+    ar: 'الدراسات والبحوث الإسلامية',
+    fa: 'پژوهش‌ها و اندیشه‌های اسلامی'
+  },
+  hero_default_content: {
+    id: 'Ruang publikasi artikel ilmiah, risalah, studi keislaman, opini, dan catatan pemikiran.',
+    en: 'Scholarly publications, essays, Islamic studies, commentaries, and academic thoughts.',
+    ar: 'منصة لنشر المقالات العلمية، والرسائل، والدراسات الإسلامية، والآراء الفكرية.',
+    fa: 'بستری برای انتشار مقالات علمی، رساله‌ها، مطالعات اسلامی، دیدگاه‌ها و یادداشت‌های پژوهشی.'
+  },
+  to_language: {
+    id: 'ke bahasa',
+    en: 'to',
+    ar: 'إلى اللغة',
+    fa: 'به زبان'
+  },
+  read_original_id: {
+    id: 'Lihat Naskah Asli (Bahasa Indonesia)',
+    en: 'View Original (Indonesian)',
+    ar: 'عرض النص الأصلي (الإندونيسية)',
+    fa: 'مشاهده متن اصلی (اندونزیایی)'
+  },
+  file_size: {
+    id: 'Ukuran berkas',
+    en: 'File size',
+    ar: 'حجم الملف',
+    fa: 'حجم فایل'
+  },
+  download_document: {
+    id: 'Unduh Dokumen Makalah',
+    en: 'Download Paper Document',
+    ar: 'تحميل الورقة البحثية',
+    fa: 'دانلود مقاله پژوهشی'
+  },
+  related_posts: {
+    id: 'Kajian Terkait Lainnya',
+    en: 'Related Scholarly Articles',
+    ar: 'مقالات ودراسات ذات صلة',
+    fa: 'مقالات و پژوهش‌های مرتبط'
+  },
+  sort_label: {
+    id: 'Urutan:',
+    en: 'Sort:',
+    ar: 'الترتيب:',
+    fa: 'مرتب‌سازی:'
+  },
   sort_by: {
     id: 'Urutan:',
     en: 'Sort by:',
@@ -216,6 +264,18 @@ const UI_DICTIONARY = {
     ar: 'الأقدم',
     fa: 'قدیمی‌ترین'
   },
+  verified_google: {
+    id: 'Akun Google Terverifikasi',
+    en: 'Verified Google Account',
+    ar: 'حساب جوجل موثق',
+    fa: 'حساب گوگل تأیید شده'
+  },
+  logout: {
+    id: 'Keluar',
+    en: 'Sign Out',
+    ar: 'تسجيل الخروج',
+    fa: 'خروج'
+  },
   login_to_comment: {
     id: 'Ingin berdiskusi atau menyampaikan tanggapan?',
     en: 'Want to join the discussion or share your response?',
@@ -228,11 +288,71 @@ const UI_DICTIONARY = {
     ar: 'سجل الدخول باستخدام حساب جوجل للمشاركة بملاحظاتك العلمية أو استفساراتك.',
     fa: 'برای ارسال نظرات تحلیلی یا پرسش‌های علمی خود با حساب گوگل وارد شوید.'
   },
+  comment_login_notice: {
+    id: 'Ingin berdiskusi atau menyampaikan tanggapan ilmiah?',
+    en: 'Want to join the academic discussion or share your scholarly response?',
+    ar: 'هل ترغب في المشاركة في الحوار العلمي أو تقديم ملاحظاتك؟',
+    fa: 'مایل به مشارکت در گفتگوهای علمی یا ارائه دیدگاه‌های پژوهشی هستید؟'
+  },
   login_with_google: {
     id: 'Masuk dengan Google',
     en: 'Sign in with Google',
     ar: 'تسجيل الدخول باستخدام جوجل',
     fa: 'ورود با حساب گوگل'
+  },
+  login_with_google_to_comment: {
+    id: 'Masuk dengan Akun Google untuk Menulis Tanggapan',
+    en: 'Sign in with Google to Post a Response',
+    ar: 'تسجيل الدخول باستخدام جوجل للمشاركة بتعليق',
+    fa: 'ورود با حساب گوگل برای ارسال دیدگاه'
+  },
+  original_author_badge: {
+    id: 'Penulis Asli',
+    en: 'Original Author',
+    ar: 'الكاتب الأصلي',
+    fa: 'نویسنده اصلی'
+  },
+  replying_to: {
+    id: 'Membalas',
+    en: 'Replying to',
+    ar: 'الرد على',
+    fa: 'پاسخ به'
+  },
+  close: {
+    id: 'Tutup',
+    en: 'Close',
+    ar: 'إغلاق',
+    fa: 'بستن'
+  },
+  write_reply_placeholder: {
+    id: 'Tulis balasan Anda di sini secara santun...',
+    en: 'Write your scholarly reply respectfully...',
+    ar: 'اكتب ردك هنا بأسلوب علمي رصين...',
+    fa: 'پاسخ خود را با بیانی محترمانه بنویسید...'
+  },
+  send_reply: {
+    id: 'Kirim Balasan',
+    en: 'Send Reply',
+    ar: 'إرسال الرد',
+    fa: 'ارسال پاسخ'
+  },
+  no_comments_yet: {
+    id: 'Belum ada tanggapan atau diskusi pada artikel ini. Jadilah yang pertama memberikan ulasan ilmiah.',
+    en: 'No responses yet on this article. Be the first to share a scholarly insight.',
+    ar: 'لا توجد تعليقات بعد على هذا المقال. كن أول من يشارك برؤية علمية.',
+    fa: 'هنوز دیدگاهی برای این مقاله ثبت نشده است. نخستین نفری باشید که دیدگاه علمی خود را به اشتراک می‌گذارد.'
+  },
+  back_to_archive: {
+    id: '← Kembali ke Arsip Tulisan',
+    en: '← Back to Article Archive',
+    ar: '← العودة إلى أرشيف المقالات',
+    fa: '← بازگشت به آرشیو مقالات'
+  },
+  back_to_top: {
+    id: 'Kembali ke Atas ↑',
+    en: 'Back to Top ↑',
+    ar: 'العودة إلى الأعلى ↑',
+    fa: 'بازگشت به بالا ↑'
   },
   write_comment_placeholder: {
     id: 'Tulis tanggapan atau catatan kritis Anda di sini secara santun...',

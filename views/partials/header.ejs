@@ -255,11 +255,7 @@
 
             setTimeout(() => {
                 const url = new URL(window.location.href);
-                if (langCode === 'id') {
-                    url.searchParams.delete('lang');
-                } else {
-                    url.searchParams.set('lang', langCode);
-                }
+                url.searchParams.set('lang', langCode);
                 window.location.href = url.toString();
             }, 400);
         }

@@ -568,7 +568,7 @@
             const cleanUrl = window.location.href.split('#')[0];
             try {
                 await navigator.clipboard.writeText(cleanUrl);
-                showToast('Tautan artikel berhasil disalin ke papan klip!');
+                showToast('<%= t("link_copied") %>');
             } catch (e) {
                 prompt('Salin tautan artikel berikut:', cleanUrl);
             }
