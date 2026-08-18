@@ -118,7 +118,27 @@ function initDB() {
       title TEXT NOT NULL,
       subtitle TEXT,
       content TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Create Post Translations Table (Ollama Hybrid Translation)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS post_translations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      post_id INTEGER NOT NULL,
+      lang_code TEXT NOT NULL,
+      title TEXT NOT NULL,
+      meta_description TEXT,
+      content TEXT NOT NULL,
+      category TEXT,
+      reading_time INTEGER DEFAULT 1,
+      status TEXT DEFAULT 'ready',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+      UNIQUE(post_id, lang_code)
     )
   `);
 
@@ -326,6 +346,39 @@ function clearFailedLoginAttempts(identifier) {
   run('DELETE FROM login_lockouts WHERE identifier = ?', [cleanId]);
 }
 
+function getPostTranslation(postId, langCode) {
+  if (!postId || !langCode) return null;
+  return getOne('SELECT * FROM post_translations WHERE post_id = ? AND lang_code = ?', [postId, langCode]);
+}
+
+function savePostTranslation(postId, langCode, data) {
+  if (!postId || !langCode || !data) return null;
+  const existing = getOne('SELECT id FROM post_translations WHERE post_id = ? AND lang_code = ?', [postId, langCode]);
+  const readingTime = data.reading_time || calculateReadingTime(data.content);
+
+  if (existing) {
+    run(
+      `UPDATE post_translations 
+       SET title = ?, meta_description = ?, content = ?, category = ?, reading_time = ?, status = 'ready', updated_at = CURRENT_TIMESTAMP 
+       WHERE id = ?`,
+      [data.title, data.meta_description || '', data.content, data.category || '', readingTime, existing.id]
+    );
+    return getOne('SELECT * FROM post_translations WHERE id = ?', [existing.id]);
+  } else {
+    run(
+      `INSERT INTO post_translations (post_id, lang_code, title, meta_description, content, category, reading_time, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'ready')`,
+      [postId, langCode, data.title, data.meta_description || '', data.content, data.category || '', readingTime]
+    );
+    return getOne('SELECT * FROM post_translations WHERE post_id = ? AND lang_code = ?', [postId, langCode]);
+  }
+}
+
+function getAllPostTranslations(postId) {
+  if (!postId) return [];
+  return getAll('SELECT lang_code, title, status, updated_at FROM post_translations WHERE post_id = ?', [postId]);
+}
+
 module.exports = {
   initDB,
   getAll,
@@ -334,5 +387,8 @@ module.exports = {
   calculateReadingTime,
   getLockoutStatus,
   recordFailedLoginAttempt,
-  clearFailedLoginAttempts
+  clearFailedLoginAttempts,
+  getPostTranslation,
+  savePostTranslation,
+  getAllPostTranslations
 };

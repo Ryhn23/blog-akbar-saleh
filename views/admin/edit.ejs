@@ -148,6 +148,64 @@
                         </div>
                     </div>
 
+                    <% if (post && post.id) { %>
+                        <!-- Ollama Multi-Language AI Translation Card -->
+                        <div class="p-4 sm:p-5 rounded-xl bg-emerald-50/60 border border-emerald-200">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
+                                <div>
+                                    <h4 class="text-xs font-bold text-emerald-950">
+                                        Terjemahan AI Multi-Bahasa (Ollama Gemma 4:31B)
+                                    </h4>
+                                    <p class="text-[11px] text-gray-500 mt-0.5">Menerjemahkan judul, ringkasan, dan isi artikel untuk pembaca internasional (Inggris, Arab, Persia).</p>
+                                </div>
+                                <button type="button" id="btnTranslateAll" onclick="triggerOllamaTranslate('<%= post.id %>')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold transition shadow-xs cursor-pointer">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                    </svg>
+                                    <span id="btnTranslateText">Terjemahkan via AI</span>
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs" id="translationStatusGrid">
+                                <% const transMap = (typeof translations !== 'undefined' && translations) ? Object.fromEntries(translations.map(t => [t.lang_code, t])) : {}; %>
+                                
+                                <!-- English -->
+                                <div class="bg-white p-3 rounded-lg border border-gray-200 flex items-center justify-between">
+                                    <div>
+                                        <span class="font-bold text-gray-900 block">English (EN)</span>
+                                        <span class="text-[10px] text-gray-500"><%= transMap.en ? 'Tersedia' : 'Belum diterjemahkan' %></span>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold <%= transMap.en ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500' %>">
+                                        <%= transMap.en ? 'Siap' : 'Draf' %>
+                                    </span>
+                                </div>
+
+                                <!-- Arabic -->
+                                <div class="bg-white p-3 rounded-lg border border-gray-200 flex items-center justify-between">
+                                    <div>
+                                        <span class="font-bold text-gray-900 block font-serif">العربية (AR)</span>
+                                        <span class="text-[10px] text-gray-500"><%= transMap.ar ? 'Tersedia' : 'Belum diterjemahkan' %></span>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold <%= transMap.ar ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500' %>">
+                                        <%= transMap.ar ? 'Siap' : 'Draf' %>
+                                    </span>
+                                </div>
+
+                                <!-- Persian -->
+                                <div class="bg-white p-3 rounded-lg border border-gray-200 flex items-center justify-between">
+                                    <div>
+                                        <span class="font-bold text-gray-900 block font-serif">فارسی (FA)</span>
+                                        <span class="text-[10px] text-gray-500"><%= transMap.fa ? 'Tersedia' : 'Belum diterjemahkan' %></span>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold <%= transMap.fa ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500' %>">
+                                        <%= transMap.fa ? 'Siap' : 'Draf' %>
+                                    </span>
+                                </div>
+                            </div>
+                            <div id="translateProgressMsg" class="hidden mt-2.5 text-[11px] text-emerald-800 font-medium"></div>
+                        </div>
+                    <% } %>
+
                     <!-- Kategori & Cover Image -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -340,6 +398,43 @@
             var content = document.querySelector('input[name=content]');
             content.value = quill.root.innerHTML;
         };
+
+        async function triggerOllamaTranslate(postId) {
+            var btn = document.getElementById('btnTranslateAll');
+            var btnText = document.getElementById('btnTranslateText');
+            var msg = document.getElementById('translateProgressMsg');
+            
+            if (!confirm('Jalankan terjemahan AI Ollama (Gemma 4:31B) untuk bahasa Inggris, Arab, dan Persia?')) return;
+
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            btnText.textContent = 'Menerjemahkan...';
+            if (msg) {
+                msg.classList.remove('hidden');
+                msg.textContent = 'Sedang memproses terjemahan via server Ollama... Harap tunggu beberapa detik.';
+            }
+
+            try {
+                var response = await fetch('/admin/posts/' + postId + '/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                var data = await response.json();
+                if (data.success) {
+                    alert('Berhasil! Artikel telah diterjemahkan ke bahasa Inggris, Arab, dan Persia.');
+                    window.location.reload();
+                } else {
+                    alert('Gagal menerjemahkan: ' + (data.error || 'Terjadi kesalahan pada server AI.'));
+                }
+            } catch (err) {
+                alert('Gagal menghubungi server: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnText.textContent = 'Terjemahkan via AI';
+                if (msg) msg.classList.add('hidden');
+            }
+        }
     </script>
 </body>
 

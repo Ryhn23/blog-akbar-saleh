@@ -21,9 +21,13 @@ const {
   calculateReadingTime,
   getLockoutStatus,
   recordFailedLoginAttempt,
-  clearFailedLoginAttempts
+  clearFailedLoginAttempts,
+  getPostTranslation,
+  savePostTranslation,
+  getAllPostTranslations
 } = require('./db');
 const { generateArticlePdf } = require('./services/pdf-service');
+const { SUPPORTED_LANGUAGES, translatePostToLanguage, translatePostAllLanguages } = require('./services/ollama-translator');
 
 const app = express();
 const PORT = process.env.PORT || 7842;
@@ -175,8 +179,11 @@ app.use((req, res, next) => {
   res.locals.authorRole = process.env.AUTHOR_ROLE || 'Kyai & Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta';
   res.locals.authorBio = process.env.AUTHOR_BIO || 'Kyai dan Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta. Menulis seputar studi keislaman, riset keilmuan, dan analisis sosial keagamaan.';
   res.locals.authorEmail = process.env.AUTHOR_EMAIL || 'akbarsaleh@khatamunnabiyyin.com';
-  res.locals.authorLocation = process.env.AUTHOR_LOCATION || 'Jakarta, Indonesia';
-  res.locals.appUrl = process.env.APP_URL || `http://localhost:${PORT}`;
+  const langQuery = (req.query.lang || 'id').toLowerCase();
+  const currentLang = SUPPORTED_LANGUAGES[langQuery] ? langQuery : 'id';
+  res.locals.currentLang = currentLang;
+  res.locals.isRtl = (currentLang === 'ar' || currentLang === 'fa');
+  res.locals.supportedLanguages = Object.values(SUPPORTED_LANGUAGES);
   res.locals.currentPath = req.path;
   res.locals.isLoggedIn = !!req.session.userId;
   res.locals.readerUser = req.session.readerUser || null;
@@ -645,8 +652,8 @@ app.get('/auth/logout', (req, res) => {
   res.redirect(returnTo);
 });
 
-// Single Post Page
-app.get('/blog/:slug', (req, res) => {
+// Single Post Page (Supports Ollama Hybrid Multi-Language: ID, EN, AR, FA)
+app.get('/blog/:slug', async (req, res) => {
   const post = getOne('SELECT * FROM posts WHERE slug = ?', [req.params.slug]);
   if (!post) {
     return res.status(404).render('404');
@@ -657,6 +664,33 @@ app.get('/blog/:slug', (req, res) => {
 
   if (isUnpublishedOrHidden && !isAdmin) {
     return res.status(404).render('404');
+  }
+
+  const targetLang = (req.query.lang || 'id').toLowerCase();
+  let activePost = { ...post };
+  let isTranslated = false;
+  let translationError = null;
+
+  if (targetLang !== 'id' && SUPPORTED_LANGUAGES[targetLang]) {
+    let trans = getPostTranslation(post.id, targetLang);
+    if (!trans) {
+      // Auto-translate on-demand via Ollama
+      try {
+        trans = await translatePostToLanguage(post, targetLang);
+      } catch (err) {
+        console.error(`[Ollama Translate On-demand Failed for ${post.slug} to ${targetLang}]:`, err.message);
+        translationError = err.message;
+      }
+    }
+
+    if (trans && trans.title && trans.content) {
+      activePost.title = trans.title;
+      activePost.meta_description = trans.meta_description;
+      activePost.content = trans.content;
+      activePost.category = trans.category || post.category;
+      activePost.reading_time = trans.reading_time || post.reading_time;
+      isTranslated = true;
+    }
   }
 
   const previewReason = post.is_published === 0 
@@ -788,7 +822,12 @@ app.get('/blog/:slug', (req, res) => {
   };
 
   res.render('post', {
-    post,
+    post: activePost,
+    originalPost: post,
+    isTranslated,
+    targetLang,
+    langConfig: SUPPORTED_LANGUAGES[targetLang] || null,
+    translationError,
     comments: rootComments,
     totalCommentCount: allComments.length,
     currentSort: sortMode,
@@ -800,8 +839,8 @@ app.get('/blog/:slug', (req, res) => {
   });
 });
 
-// Download Article as Protected Read-Only PDF
-app.get('/blog/:slug/pdf', (req, res) => {
+// Download Article as Protected Read-Only PDF (Supports Translated Version)
+app.get('/blog/:slug/pdf', async (req, res) => {
   const post = getOne('SELECT * FROM posts WHERE slug = ?', [req.params.slug]);
   if (!post) {
     return res.status(404).render('404');
@@ -811,15 +850,35 @@ app.get('/blog/:slug/pdf', (req, res) => {
     return res.status(404).render('404');
   }
 
+  const targetLang = (req.query.lang || 'id').toLowerCase();
+  let activePost = { ...post };
+
+  if (targetLang !== 'id' && SUPPORTED_LANGUAGES[targetLang]) {
+    let trans = getPostTranslation(post.id, targetLang);
+    if (!trans) {
+      try {
+        trans = await translatePostToLanguage(post, targetLang);
+      } catch (err) {
+        console.warn(`[PDF Translate Failed for ${post.slug}]:`, err.message);
+      }
+    }
+    if (trans && trans.title && trans.content) {
+      activePost.title = trans.title;
+      activePost.meta_description = trans.meta_description;
+      activePost.content = trans.content;
+      activePost.category = trans.category || post.category;
+    }
+  }
+
   const baseUrl = process.env.APP_URL || `http://localhost:${PORT}`;
-  const doc = generateArticlePdf(post, {
+  const doc = generateArticlePdf(activePost, {
     siteName: process.env.SITE_NAME || 'Akbar Saleh',
     siteUrl: baseUrl,
     authorName: process.env.AUTHOR_NAME || 'Akbar Saleh, B.A.',
     authorRole: process.env.AUTHOR_ROLE || 'Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta'
   });
 
-  const filename = `${post.slug}.pdf`;
+  const filename = `${post.slug}${targetLang !== 'id' ? '-' + targetLang : ''}.pdf`;
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
 
@@ -1039,7 +1098,27 @@ app.get('/admin/posts/:id/edit', requireAuth, (req, res) => {
   const post = getOne('SELECT * FROM posts WHERE id = ?', [req.params.id]);
   if (!post) return res.status(404).send('Artikel tidak ditemukan.');
   const categories = getAll('SELECT * FROM categories ORDER BY name ASC');
-  res.render('admin/edit', { post, categories, error: null });
+  const translations = getAllPostTranslations(post.id);
+  res.render('admin/edit', { post, categories, translations, error: null });
+});
+
+// Admin Ollama Translation Trigger Endpoint
+app.post('/admin/posts/:id/translate', requireAuth, async (req, res) => {
+  const post = getOne('SELECT * FROM posts WHERE id = ?', [req.params.id]);
+  if (!post) return res.status(404).json({ error: 'Artikel tidak ditemukan' });
+
+  const { lang } = req.body;
+  try {
+    if (lang && SUPPORTED_LANGUAGES[lang]) {
+      const result = await translatePostToLanguage(post, lang);
+      return res.json({ success: true, lang, result });
+    } else {
+      const results = await translatePostAllLanguages(post);
+      return res.json({ success: true, results });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 // Category Management Routes
