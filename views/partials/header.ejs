@@ -61,7 +61,7 @@
             <div class="flex justify-between items-center h-16">
                 
                 <!-- Brand Title -->
-                <a href="/" class="group flex flex-col">
+                <a href="/<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="group flex flex-col">
                     <span class="font-serif font-bold text-xl sm:text-2xl text-emerald-900 tracking-tight group-hover:text-emerald-700 transition-colors">
                         <%= siteName %>
                     </span>
@@ -72,13 +72,13 @@
 
                 <!-- Desktop Navigation Links & Language Switcher -->
                 <nav class="hidden sm:flex items-center space-x-6">
-                    <a href="/" class="text-sm font-medium transition-colors <%= currentPath === '/' ? 'text-emerald-800 font-semibold border-b-2 border-emerald-700 pb-0.5' : 'text-gray-600 hover:text-emerald-800' %>">
+                    <a href="/<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="text-sm font-medium transition-colors <%= currentPath === '/' ? 'text-emerald-800 font-semibold border-b-2 border-emerald-700 pb-0.5' : 'text-gray-600 hover:text-emerald-800' %>">
                         <%= typeof t !== 'undefined' ? t('nav_home') : 'Beranda' %>
                     </a>
-                    <a href="/blog" class="text-sm font-medium transition-colors <%= currentPath.startsWith('/blog') ? 'text-emerald-800 font-semibold border-b-2 border-emerald-700 pb-0.5' : 'text-gray-600 hover:text-emerald-800' %>">
+                    <a href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="text-sm font-medium transition-colors <%= currentPath.startsWith('/blog') ? 'text-emerald-800 font-semibold border-b-2 border-emerald-700 pb-0.5' : 'text-gray-600 hover:text-emerald-800' %>">
                         <%= typeof t !== 'undefined' ? t('nav_blog') : 'Kajian & Tulisan' %>
                     </a>
-                    <a href="/about" class="text-sm font-medium transition-colors <%= currentPath === '/about' ? 'text-emerald-800 font-semibold border-b-2 border-emerald-700 pb-0.5' : 'text-gray-600 hover:text-emerald-800' %>">
+                    <a href="/about<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="text-sm font-medium transition-colors <%= currentPath === '/about' ? 'text-emerald-800 font-semibold border-b-2 border-emerald-700 pb-0.5' : 'text-gray-600 hover:text-emerald-800' %>">
                         <%= typeof t !== 'undefined' ? t('nav_about') : 'Tentang' %>
                     </a>
 
@@ -247,6 +247,12 @@
 
             showTranslationLoader(langCode);
 
+            // Persist language choice in Cookie (1 year) and LocalStorage
+            document.cookie = "app_lang=" + encodeURIComponent(langCode) + "; path=/; max-age=31536000; SameSite=Lax";
+            try {
+                localStorage.setItem('app_lang', langCode);
+            } catch (e) {}
+
             setTimeout(() => {
                 const url = new URL(window.location.href);
                 if (langCode === 'id') {
@@ -274,9 +280,9 @@
 
         <!-- Mobile Menu Dropdown -->
         <div class="sm:hidden hidden bg-white border-b border-gray-100 px-4 pt-2 pb-4 space-y-2" id="mobile-menu">
-            <a href="/" class="block px-3 py-2 rounded-lg text-sm font-medium <%= currentPath === '/' ? 'text-emerald-800 bg-emerald-50 font-bold' : 'text-gray-700 hover:bg-gray-50' %>"><%= typeof t !== 'undefined' ? t('nav_home') : 'Beranda' %></a>
-            <a href="/blog" class="block px-3 py-2 rounded-lg text-sm font-medium <%= currentPath.startsWith('/blog') ? 'text-emerald-800 bg-emerald-50 font-bold' : 'text-gray-700 hover:bg-gray-50' %>"><%= typeof t !== 'undefined' ? t('nav_blog') : 'Kajian & Tulisan' %></a>
-            <a href="/about" class="block px-3 py-2 rounded-lg text-sm font-medium <%= currentPath === '/about' ? 'text-emerald-800 bg-emerald-50 font-bold' : 'text-gray-700 hover:bg-gray-50' %>"><%= typeof t !== 'undefined' ? t('nav_about') : 'Tentang' %></a>
+            <a href="/<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="block px-3 py-2 rounded-lg text-sm font-medium <%= currentPath === '/' ? 'text-emerald-800 bg-emerald-50 font-bold' : 'text-gray-700 hover:bg-gray-50' %>"><%= typeof t !== 'undefined' ? t('nav_home') : 'Beranda' %></a>
+            <a href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="block px-3 py-2 rounded-lg text-sm font-medium <%= currentPath.startsWith('/blog') ? 'text-emerald-800 bg-emerald-50 font-bold' : 'text-gray-700 hover:bg-gray-50' %>"><%= typeof t !== 'undefined' ? t('nav_blog') : 'Kajian & Tulisan' %></a>
+            <a href="/about<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="block px-3 py-2 rounded-lg text-sm font-medium <%= currentPath === '/about' ? 'text-emerald-800 bg-emerald-50 font-bold' : 'text-gray-700 hover:bg-gray-50' %>"><%= typeof t !== 'undefined' ? t('nav_about') : 'Tentang' %></a>
             <% if (isLoggedIn) { %>
                 <a href="/admin" class="block px-3 py-2 rounded-lg text-sm font-semibold text-emerald-800 bg-emerald-100"><%= typeof t !== 'undefined' ? t('nav_dashboard') : 'Dasbor Admin' %></a>
             <% } %>

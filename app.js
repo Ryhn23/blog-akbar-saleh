@@ -182,10 +182,44 @@ app.use(session({
 
 app.use(passport.initialize());
 
-// Global Template Variables Middleware (Dynamic .env & Multi-Language Support)
+// Helper: Extract cookie value safely from request headers
+function getCookie(req, name) {
+  const cookieHeader = req.headers?.cookie;
+  if (!cookieHeader) return null;
+  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+// Global Template Variables Middleware (Dynamic .env & Persistent Multi-Language Support)
 app.use(async (req, res, next) => {
-  const langQuery = (req.query.lang || 'id').toLowerCase();
-  const currentLang = SUPPORTED_LANGUAGES[langQuery] ? langQuery : 'id';
+  let lang = null;
+
+  // 1. Explicit query parameter has highest priority
+  if (req.query.lang && SUPPORTED_LANGUAGES[req.query.lang.toLowerCase()]) {
+    lang = req.query.lang.toLowerCase();
+    if (req.session) req.session.currentLang = lang;
+    res.cookie('app_lang', lang, {
+      maxAge: 365 * 24 * 60 * 60 * 1000,
+      httpOnly: false,
+      sameSite: 'lax',
+      path: '/'
+    });
+  } 
+  // 2. Session persistence across page navigations
+  else if (req.session && req.session.currentLang && SUPPORTED_LANGUAGES[req.session.currentLang]) {
+    lang = req.session.currentLang;
+  }
+  // 3. Cookie persistence across browser reloads / tabs
+  else {
+    const cookieLang = getCookie(req, 'app_lang');
+    if (cookieLang && SUPPORTED_LANGUAGES[cookieLang.toLowerCase()]) {
+      lang = cookieLang.toLowerCase();
+      if (req.session) req.session.currentLang = lang;
+    }
+  }
+
+  const currentLang = lang || 'id';
+  req.currentLang = currentLang;
 
   let siteProfile = {
     siteName: process.env.SITE_NAME || 'Akbar Saleh',
@@ -392,7 +426,7 @@ function localizePost(post, targetLang) {
 app.get('/', async (req, res) => {
   const baseUrl = process.env.APP_URL || `http://localhost:${PORT}`;
   const siteName = process.env.SITE_NAME || 'Akbar Saleh';
-  const targetLang = (req.query.lang || 'id').toLowerCase();
+  const targetLang = req.currentLang || res.locals.currentLang || (req.query.lang || 'id').toLowerCase();
 
   const rawFeaturedPosts = getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 AND is_featured = 1 ORDER BY created_at DESC LIMIT 2');
   const rawRecentPosts = getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 ORDER BY created_at DESC LIMIT 6');
@@ -480,7 +514,7 @@ app.get('/blog', async (req, res) => {
   const baseUrl = process.env.APP_URL || `http://localhost:${PORT}`;
   const authorName = process.env.AUTHOR_NAME || 'Akbar Saleh, B.A.';
   const authorRole = process.env.AUTHOR_ROLE || 'Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta';
-  const targetLang = (req.query.lang || 'id').toLowerCase();
+  const targetLang = req.currentLang || res.locals.currentLang || (req.query.lang || 'id').toLowerCase();
   const { q, category } = req.query;
   let sql = 'SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0';
   const params = [];
@@ -554,7 +588,7 @@ app.get('/about', async (req, res) => {
   const baseUrl = process.env.APP_URL || `http://localhost:${PORT}`;
   const authorName = process.env.AUTHOR_NAME || 'Akbar Saleh, B.A.';
   const authorRole = process.env.AUTHOR_ROLE || 'Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta';
-  const targetLang = (req.query.lang || 'id').toLowerCase();
+  const targetLang = req.currentLang || res.locals.currentLang || (req.query.lang || 'id').toLowerCase();
 
   let page = getOne('SELECT * FROM pages WHERE slug = ?', ['about']);
   if (!page) {
@@ -789,7 +823,7 @@ app.get('/blog/:slug', async (req, res) => {
     return res.status(404).render('404');
   }
 
-  const targetLang = (req.query.lang || 'id').toLowerCase();
+  const targetLang = req.currentLang || res.locals.currentLang || (req.query.lang || 'id').toLowerCase();
   let activePost = { ...post };
   let isTranslated = false;
   let translationError = null;
@@ -983,7 +1017,7 @@ app.get('/blog/:slug/pdf', async (req, res) => {
     return res.status(404).render('404');
   }
 
-  const targetLang = (req.query.lang || 'id').toLowerCase();
+  const targetLang = req.currentLang || res.locals.currentLang || (req.query.lang || 'id').toLowerCase();
   let activePost = { ...post };
 
   if (targetLang !== 'id' && SUPPORTED_LANGUAGES[targetLang]) {
