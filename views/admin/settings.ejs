@@ -112,26 +112,40 @@
                 </div>
 
                 <!-- Google Connection Status -->
-                <div class="pt-2 pb-1 border-t border-gray-100">
-                    <div class="flex items-center justify-between text-xs">
+                <div class="pt-3 pb-1 border-t border-gray-100">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                         <span class="text-gray-600 font-medium">Status Akun Google:</span>
-                        <% if (user && user.google_id) { %>
-                            <span class="inline-flex items-center gap-1 text-emerald-800 font-bold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                                Terhubung (Google ID: <%= user.google_id.substring(0, 8) %>...)
-                            </span>
+                        <% if (user && (user.google_id || user.email)) { %>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="inline-flex items-center gap-1.5 text-emerald-800 font-bold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                                    Terhubung (<%= user.email || user.google_id %>)
+                                </span>
+                            </div>
                         <% } else { %>
-                            <span class="text-gray-400">Belum terhubung secara langsung (Gunakan tombol login Google untuk menghubungkan)</span>
+                            <span class="text-gray-400">Belum terhubung ke akun Google manapun.</span>
                         <% } %>
                     </div>
                 </div>
 
-                <div class="pt-2 flex justify-end">
+                <div class="pt-2 flex items-center justify-between">
+                    <div>
+                        <% if (user && (user.google_id || user.email)) { %>
+                            <button type="submit" form="form-unbind" class="text-xs text-red-600 hover:text-red-800 font-semibold underline cursor-pointer">
+                                ✕ Putuskan Akun Google (Unbind)
+                            </button>
+                        <% } %>
+                    </div>
                     <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold transition shadow-xs">
                         Simpan Perubahan Profil
                     </button>
                 </div>
             </form>
+
+            <% if (user && (user.google_id || user.email)) { %>
+                <form id="form-unbind" action="/admin/settings/unbind-google" method="POST" onsubmit="return confirm('Yakin ingin memutuskan/menghapus tautan akun Google ini dari akun Admin?');" class="hidden">
+                </form>
+            <% } %>
         </div>
 
         <!-- Password Change Card -->

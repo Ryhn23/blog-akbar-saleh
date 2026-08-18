@@ -1251,6 +1251,23 @@ app.post('/admin/settings/profile', requireAuth, (req, res) => {
   res.render('admin/settings', { user: updatedUser, homeHero, error: null, success: 'Profil dan email Google resmi berhasil diperbarui!' });
 });
 
+app.post('/admin/settings/unbind-google', requireAuth, (req, res) => {
+  run('UPDATE users SET google_id = NULL, email = NULL, avatar = NULL WHERE id = ?', [req.session.userId]);
+  delete req.session.userEmail;
+  delete req.session.userAvatar;
+  if (req.session.readerUser && req.session.readerUser.isAuthor) {
+    delete req.session.readerUser;
+  }
+  const user = getOne('SELECT id, username, name, email, google_id, avatar FROM users WHERE id = ?', [req.session.userId]);
+  const homeHero = getOne('SELECT * FROM pages WHERE slug = ?', ['home']);
+  res.render('admin/settings', {
+    user,
+    homeHero,
+    error: null,
+    success: 'Tautan akun Google berhasil dilepas (Unbind sukses)!'
+  });
+});
+
 app.post('/admin/settings/password', requireAuth, (req, res) => {
   const { current_password, new_password, confirm_password } = req.body;
   const user = getOne('SELECT * FROM users WHERE id = ?', [req.session.userId]);
