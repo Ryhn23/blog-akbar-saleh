@@ -89,12 +89,11 @@
                                                 <% if (post.is_featured) { %>
                                                     <span
                                                         class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Utama</span>
-                                                    <% } %>
-                                                        <% if (post.attachment_url) { %>
-                                                            <span
-                                                                class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700">📎
-                                                                File</span>
-                                                            <% } %>
+                                                <% } %>
+                                                <% if (post.attachment_url) { %>
+                                                    <span
+                                                        class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700">Lampiran</span>
+                                                <% } %>
                                         </div>
                                         <div class="text-gray-400">/blog/<%= post.slug %>
                                         </div>
@@ -115,13 +114,13 @@
                                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
                                                         Terbit
                                                     </button>
-                                                    <% } else { %>
-                                                        <button type="submit"
-                                                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 hover:bg-amber-200 transition cursor-pointer">
-                                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
-                                                            Draf
-                                                        </button>
-                                                        <% } %>
+                                                <% } else { %>
+                                                    <button type="submit"
+                                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 hover:bg-amber-200 transition cursor-pointer">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                                                        Draf
+                                                    </button>
+                                                <% } %>
                                             </form>
 
                                             <!-- Visibility Status & Toggle -->
@@ -131,14 +130,14 @@
                                                 <% if (post.is_hidden===1) { %>
                                                     <button type="submit"
                                                         class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition cursor-pointer">
-                                                        <span>🙈 Sembunyi</span>
+                                                        <span>Sembunyi</span>
                                                     </button>
-                                                    <% } else { %>
-                                                        <button type="submit"
-                                                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 hover:bg-blue-100 transition cursor-pointer">
-                                                            <span>👁️ Tampil</span>
-                                                        </button>
-                                                        <% } %>
+                                                <% } else { %>
+                                                    <button type="submit"
+                                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 hover:bg-blue-100 transition cursor-pointer">
+                                                        <span>Tampil</span>
+                                                    </button>
+                                                <% } %>
                                             </form>
                                         </div>
                                     </td>
