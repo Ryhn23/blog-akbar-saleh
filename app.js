@@ -455,6 +455,8 @@ app.get('/', async (req, res) => {
 // Blog List (Full Multi-Language Support with search & category filter)
 app.get('/blog', (req, res) => {
   const baseUrl = process.env.APP_URL || `http://localhost:${PORT}`;
+  const authorName = process.env.AUTHOR_NAME || 'Akbar Saleh, B.A.';
+  const authorRole = process.env.AUTHOR_ROLE || 'Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta';
   const targetLang = (req.query.lang || 'id').toLowerCase();
   const { q, category } = req.query;
   let sql = 'SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0';
