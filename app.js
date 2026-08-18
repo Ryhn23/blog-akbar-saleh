@@ -25,6 +25,7 @@ const {
   getPostTranslation,
   savePostTranslation,
   getAllPostTranslations,
+  computeContentHash,
   getPageTranslation,
   savePageTranslation
 } = require('./db');
@@ -345,23 +346,68 @@ app.get('/feed.xml', sendRssFeed);
 
 // --- PUBLIC ROUTES ---
 
-// Homepage
-app.get('/', (req, res) => {
+// Helper: Map post to its cached translation if target language is not ID (using content hash for freshness)
+function localizePost(post, targetLang) {
+  if (!post || targetLang === 'id') return post;
+  const sourceHash = computeContentHash({
+    title: post.title,
+    meta: post.meta_description || '',
+    content: post.content,
+    cat: post.category || ''
+  });
+  const trans = getPostTranslation(post.id, targetLang, sourceHash);
+  if (trans && trans.title) {
+    return {
+      ...post,
+      title: trans.title,
+      meta_description: trans.meta_description || post.meta_description,
+      category: trans.category || post.category,
+      reading_time: trans.reading_time || post.reading_time
+    };
+  }
+  return post;
+}
+
+// Homepage (Full Multi-Language Support)
+app.get('/', async (req, res) => {
   const baseUrl = process.env.APP_URL || `http://localhost:${PORT}`;
   const siteName = process.env.SITE_NAME || 'Akbar Saleh';
-  const siteTagline = process.env.SITE_TAGLINE || 'Kajian & Pemikiran Keislaman';
-  const authorName = process.env.AUTHOR_NAME || 'Akbar Saleh, B.A.';
-  const authorRole = process.env.AUTHOR_ROLE || 'Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta';
+  const targetLang = (req.query.lang || 'id').toLowerCase();
 
-  const featuredPosts = getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 AND is_featured = 1 ORDER BY created_at DESC LIMIT 2');
-  const recentPosts = getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 ORDER BY created_at DESC LIMIT 6');
+  const rawFeaturedPosts = getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 AND is_featured = 1 ORDER BY created_at DESC LIMIT 2');
+  const rawRecentPosts = getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 ORDER BY created_at DESC LIMIT 6');
   const categories = getAll('SELECT category, COUNT(*) as count FROM posts WHERE is_published = 1 AND is_hidden = 0 GROUP BY category ORDER BY count DESC');
   const totalPosts = getOne('SELECT COUNT(*) as total FROM posts WHERE is_published = 1 AND is_hidden = 0')?.total || 0;
 
+  const featuredPosts = rawFeaturedPosts.map(p => localizePost(p, targetLang));
+  const recentPosts = rawRecentPosts.map(p => localizePost(p, targetLang));
+
   const homeHero = getOne('SELECT * FROM pages WHERE slug = ?', ['home']);
-  const heroBadge = homeHero ? homeHero.subtitle : 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
-  const heroTitle = homeHero ? homeHero.title : 'Catatan, Kajian Ilmiah & <span class="text-emerald-800">Pemikiran Keislaman</span>';
-  const heroContent = homeHero ? homeHero.content : 'Selamat datang di ruang tulisan pribadi saya. Halaman ini memuat riset ilmiah, telaah studi keislaman, opini sosial-keagamaan, serta catatan refleksi dari <strong>Pondok Pesantren Khatamun Nabiyyin Jakarta</strong>.';
+  let heroBadge = 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
+  let heroTitle = t('hero_default_title', targetLang);
+  let heroContent = t('hero_default_content', targetLang);
+
+  if (targetLang === 'id') {
+    if (homeHero) {
+      heroTitle = homeHero.title;
+      heroContent = homeHero.content;
+      if (homeHero.subtitle) heroBadge = homeHero.subtitle;
+    }
+  } else if (SUPPORTED_LANGUAGES[targetLang]) {
+    let transHero = getPageTranslation('home', targetLang);
+    if (!transHero && homeHero && homeHero.title) {
+      try {
+        transHero = await translatePageToLanguage('home', homeHero, targetLang);
+      } catch (err) {
+        console.warn(`[Ollama Hero Translate Failed for 'home']:`, err.message);
+      }
+    }
+    if (transHero) {
+      heroTitle = transHero.title || heroTitle;
+      heroContent = transHero.content || heroContent;
+      if (transHero.subtitle) heroBadge = transHero.subtitle;
+    }
+  }
 
   const schemaJsonLd = {
     "@context": "https://schema.org",
@@ -371,8 +417,8 @@ app.get('/', (req, res) => {
         "@id": `${baseUrl}/#website`,
         "url": baseUrl,
         "name": siteName,
-        "description": siteTagline,
-        "inLanguage": "id-ID",
+        "description": t('site_tagline', targetLang),
+        "inLanguage": targetLang === 'ar' ? 'ar' : (targetLang === 'fa' ? 'fa' : (targetLang === 'en' ? 'en' : 'id-ID')),
         "potentialAction": {
           "@type": "SearchAction",
           "target": `${baseUrl}/blog?q={search_term_string}`,
@@ -382,8 +428,8 @@ app.get('/', (req, res) => {
       {
         "@type": "Person",
         "@id": `${baseUrl}/#author`,
-        "name": authorName,
-        "jobTitle": authorRole,
+        "name": process.env.AUTHOR_NAME || 'Akbar Saleh, B.A.',
+        "jobTitle": t('author_role', targetLang),
         "worksFor": {
           "@type": "Organization",
           "name": "Pondok Pesantren Khatamun Nabiyyin Jakarta"
@@ -406,10 +452,10 @@ app.get('/', (req, res) => {
   });
 });
 
-// Blog List (with search & category filter)
+// Blog List (Full Multi-Language Support with search & category filter)
 app.get('/blog', (req, res) => {
   const baseUrl = process.env.APP_URL || `http://localhost:${PORT}`;
-  const authorName = process.env.AUTHOR_NAME || 'Akbar Saleh, B.A.';
+  const targetLang = (req.query.lang || 'id').toLowerCase();
   const { q, category } = req.query;
   let sql = 'SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0';
   const params = [];
@@ -427,10 +473,11 @@ app.get('/blog', (req, res) => {
 
   sql += ' ORDER BY created_at DESC';
 
-  const posts = getAll(sql, params);
+  const rawPosts = getAll(sql, params);
+  const posts = rawPosts.map(p => localizePost(p, targetLang));
   const categories = getAll('SELECT category, COUNT(*) as count FROM posts WHERE is_published = 1 AND is_hidden = 0 GROUP BY category ORDER BY count DESC');
 
-  const pageTitle = category ? `Kajian ${category}` : (q ? `Hasil Pencarian: "${q}"` : 'Arsip Kajian & Tulisan Ilmiah');
+  const pageTitle = category ? `Kajian ${category}` : (q ? `Hasil Pencarian: "${q}"` : t('nav_blog', targetLang));
   const canonicalUrl = category ? `${baseUrl}/blog?category=${encodeURIComponent(category)}` : `${baseUrl}/blog`;
 
   const schemaJsonLd = {
@@ -489,7 +536,12 @@ app.get('/about', async (req, res) => {
   let isTranslated = false;
 
   if (targetLang !== 'id' && SUPPORTED_LANGUAGES[targetLang]) {
-    let trans = getPageTranslation('about', targetLang);
+    const pageHash = computeContentHash({
+      title: page.title || '',
+      subtitle: page.subtitle || '',
+      content: page.content || ''
+    });
+    let trans = getPageTranslation('about', targetLang, pageHash);
     if (!trans) {
       try {
         trans = await translatePageToLanguage('about', page, targetLang);
@@ -710,7 +762,13 @@ app.get('/blog/:slug', async (req, res) => {
   let translationError = null;
 
   if (targetLang !== 'id' && SUPPORTED_LANGUAGES[targetLang]) {
-    let trans = getPostTranslation(post.id, targetLang);
+    const sourceHash = computeContentHash({
+      title: post.title,
+      meta: post.meta_description || '',
+      content: post.content,
+      cat: post.category || ''
+    });
+    let trans = getPostTranslation(post.id, targetLang, sourceHash);
     if (!trans) {
       // Auto-translate on-demand via Ollama
       try {
@@ -892,7 +950,13 @@ app.get('/blog/:slug/pdf', async (req, res) => {
   let activePost = { ...post };
 
   if (targetLang !== 'id' && SUPPORTED_LANGUAGES[targetLang]) {
-    let trans = getPostTranslation(post.id, targetLang);
+    const sourceHash = computeContentHash({
+      title: post.title,
+      meta: post.meta_description || '',
+      content: post.content,
+      cat: post.category || ''
+    });
+    let trans = getPostTranslation(post.id, targetLang, sourceHash);
     if (!trans) {
       try {
         trans = await translatePostToLanguage(post, targetLang);

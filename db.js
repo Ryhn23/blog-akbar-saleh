@@ -123,7 +123,7 @@ function initDB() {
     )
   `);
 
-  // Create Post Translations Table (Ollama Hybrid Translation)
+  // Create Post Translations Table (Ollama Hybrid Translation with Content Hashing)
   db.exec(`
     CREATE TABLE IF NOT EXISTS post_translations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -135,12 +135,16 @@ function initDB() {
       category TEXT,
       reading_time INTEGER DEFAULT 1,
       status TEXT DEFAULT 'ready',
+      source_hash TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
       UNIQUE(post_id, lang_code)
     )
   `);
+
+  // Try adding source_hash if table already existed
+  try { db.exec(`ALTER TABLE post_translations ADD COLUMN source_hash TEXT`); } catch (_) {}
 
   // Create Page Translations Table (For About, Hero, etc.)
   db.exec(`
@@ -152,11 +156,14 @@ function initDB() {
       subtitle TEXT,
       content TEXT NOT NULL,
       status TEXT DEFAULT 'ready',
+      source_hash TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(page_slug, lang_code)
     )
   `);
+
+  try { db.exec(`ALTER TABLE page_translations ADD COLUMN source_hash TEXT`); } catch (_) {}
 
   // Seed default About page if not exists
   const aboutPage = db.prepare('SELECT id FROM pages WHERE slug = ?').get('about');
@@ -362,29 +369,43 @@ function clearFailedLoginAttempts(identifier) {
   run('DELETE FROM login_lockouts WHERE identifier = ?', [cleanId]);
 }
 
-function getPostTranslation(postId, langCode) {
-  if (!postId || !langCode) return null;
-  return getOne('SELECT * FROM post_translations WHERE post_id = ? AND lang_code = ?', [postId, langCode]);
+const crypto = require('crypto');
+
+function computeContentHash(data) {
+  if (!data) return '';
+  const str = typeof data === 'string' ? data : JSON.stringify(data);
+  return crypto.createHash('sha256').update(str).digest('hex').substring(0, 16);
 }
 
-function savePostTranslation(postId, langCode, data) {
+function getPostTranslation(postId, langCode, expectedHash = null) {
+  if (!postId || !langCode) return null;
+  const trans = getOne('SELECT * FROM post_translations WHERE post_id = ? AND lang_code = ?', [postId, langCode]);
+  if (!trans) return null;
+  if (expectedHash && trans.source_hash && trans.source_hash !== expectedHash) {
+    return null; // Stale cache
+  }
+  return trans;
+}
+
+function savePostTranslation(postId, langCode, data, sourceHash = null) {
   if (!postId || !langCode || !data) return null;
   const existing = getOne('SELECT id FROM post_translations WHERE post_id = ? AND lang_code = ?', [postId, langCode]);
   const readingTime = data.reading_time || calculateReadingTime(data.content);
+  const hash = sourceHash || (data.source_hash || null);
 
   if (existing) {
     run(
       `UPDATE post_translations 
-       SET title = ?, meta_description = ?, content = ?, category = ?, reading_time = ?, status = 'ready', updated_at = CURRENT_TIMESTAMP 
+       SET title = ?, meta_description = ?, content = ?, category = ?, reading_time = ?, status = 'ready', source_hash = ?, updated_at = CURRENT_TIMESTAMP 
        WHERE id = ?`,
-      [data.title, data.meta_description || '', data.content, data.category || '', readingTime, existing.id]
+      [data.title, data.meta_description || '', data.content, data.category || '', readingTime, hash, existing.id]
     );
     return getOne('SELECT * FROM post_translations WHERE id = ?', [existing.id]);
   } else {
     run(
-      `INSERT INTO post_translations (post_id, lang_code, title, meta_description, content, category, reading_time, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'ready')`,
-      [postId, langCode, data.title, data.meta_description || '', data.content, data.category || '', readingTime]
+      `INSERT INTO post_translations (post_id, lang_code, title, meta_description, content, category, reading_time, status, source_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'ready', ?)`,
+      [postId, langCode, data.title, data.meta_description || '', data.content, data.category || '', readingTime, hash]
     );
     return getOne('SELECT * FROM post_translations WHERE post_id = ? AND lang_code = ?', [postId, langCode]);
   }
@@ -392,31 +413,37 @@ function savePostTranslation(postId, langCode, data) {
 
 function getAllPostTranslations(postId) {
   if (!postId) return [];
-  return getAll('SELECT lang_code, title, status, updated_at FROM post_translations WHERE post_id = ?', [postId]);
+  return getAll('SELECT lang_code, title, status, source_hash, updated_at FROM post_translations WHERE post_id = ?', [postId]);
 }
 
-function getPageTranslation(pageSlug, langCode) {
+function getPageTranslation(pageSlug, langCode, expectedHash = null) {
   if (!pageSlug || !langCode) return null;
-  return getOne('SELECT * FROM page_translations WHERE page_slug = ? AND lang_code = ?', [pageSlug, langCode]);
+  const trans = getOne('SELECT * FROM page_translations WHERE page_slug = ? AND lang_code = ?', [pageSlug, langCode]);
+  if (!trans) return null;
+  if (expectedHash && trans.source_hash && trans.source_hash !== expectedHash) {
+    return null; // Stale cache
+  }
+  return trans;
 }
 
-function savePageTranslation(pageSlug, langCode, data) {
+function savePageTranslation(pageSlug, langCode, data, sourceHash = null) {
   if (!pageSlug || !langCode || !data) return null;
   const existing = getOne('SELECT id FROM page_translations WHERE page_slug = ? AND lang_code = ?', [pageSlug, langCode]);
+  const hash = sourceHash || (data.source_hash || null);
 
   if (existing) {
     run(
       `UPDATE page_translations 
-       SET title = ?, subtitle = ?, content = ?, status = 'ready', updated_at = CURRENT_TIMESTAMP 
+       SET title = ?, subtitle = ?, content = ?, status = 'ready', source_hash = ?, updated_at = CURRENT_TIMESTAMP 
        WHERE id = ?`,
-      [data.title || '', data.subtitle || '', data.content || '', existing.id]
+      [data.title || '', data.subtitle || '', data.content || '', hash, existing.id]
     );
     return getOne('SELECT * FROM page_translations WHERE id = ?', [existing.id]);
   } else {
     run(
-      `INSERT INTO page_translations (page_slug, lang_code, title, subtitle, content, status)
-       VALUES (?, ?, ?, ?, ?, 'ready')`,
-      [pageSlug, langCode, data.title || '', data.subtitle || '', data.content || '']
+      `INSERT INTO page_translations (page_slug, lang_code, title, subtitle, content, status, source_hash)
+       VALUES (?, ?, ?, ?, ?, 'ready', ?)`,
+      [pageSlug, langCode, data.title || '', data.subtitle || '', data.content || '', hash]
     );
     return getOne('SELECT * FROM page_translations WHERE page_slug = ? AND lang_code = ?', [pageSlug, langCode]);
   }
@@ -431,6 +458,7 @@ module.exports = {
   getLockoutStatus,
   recordFailedLoginAttempt,
   clearFailedLoginAttempts,
+  computeContentHash,
   getPostTranslation,
   savePostTranslation,
   getAllPostTranslations,

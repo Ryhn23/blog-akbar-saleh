@@ -1,6 +1,6 @@
-const { calculateReadingTime, savePostTranslation, savePageTranslation } = require('../db');
+const { calculateReadingTime, computeContentHash, savePostTranslation, savePageTranslation } = require('../db');
 
-const OLLAMA_HOST = (process.env.OLLAMA_HOST || 'https://ollama-ms-ry1.nextray.org').replace(/\/+$/, '');
+const OLLAMA_HOST = (process.env.OLLAMA_HOST || 'https://ai.khatamunnabiyyin.net').replace(/\/+$/, '');
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma4:31b-cloud';
 const OLLAMA_TIMEOUT = parseInt(process.env.OLLAMA_TIMEOUT_MS, 10) || 120000;
 
@@ -66,17 +66,29 @@ const UI_DICTIONARY = {
     ar: 'لوحة التحكم',
     fa: 'داشبورد'
   },
+  site_tagline: {
+    id: 'Blog dan Kumpulan Tulisan Ilmiah',
+    en: 'Scholarly Blog & Islamic Research Essays',
+    ar: 'مدونة ومقالات بحثية إسلامية',
+    fa: 'وبلاگ و مقالات پژوهشی اسلامی'
+  },
+  author_role: {
+    id: 'Kyai & Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta',
+    en: 'Kyai & Director of Khatamun Nabiyyin Islamic Seminary, Jakarta',
+    ar: 'مدير حوزة خاتم النبيين (ص) بجاكرتا',
+    fa: 'مدیر حوزه علمیه خاتم النبیین (ص) جاکارتا'
+  },
   hero_default_title: {
-    id: 'Catatan, Kajian Ilmiah & Pemikiran Keislaman',
-    en: 'Notes, Scholarly Studies & Islamic Philosophy',
-    ar: 'ملاحظات، دراسات علمية وفكر إسلامي',
-    fa: 'یادداشت‌ها، مطالعات علمی و اندیشه اسلامی'
+    id: 'Catatan, Kajian Ilmiah & <span class="text-emerald-800">Pemikiran Keislaman</span>',
+    en: 'Notes, Scholarly Studies & <span class="text-emerald-800">Islamic Philosophy</span>',
+    ar: 'ملاحظات، دراسات علمية و<span class="text-emerald-800">فكر إسلامي</span>',
+    fa: 'یادداشت‌ها، مطالعات علمی و <span class="text-emerald-800">اندیشه اسلامی</span>'
   },
   hero_default_content: {
-    id: 'Ruang publikasi artikel ilmiah, studi keislaman, opini, dan catatan pemikiran oleh Kyai & Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta.',
-    en: 'A platform for academic articles, Islamic studies, religious philosophy, and scholarly commentary by Kyai & Director of Khatamun Nabiyyin Islamic Seminary, Jakarta.',
-    ar: 'منصة لنشر المقالات الأكاديمية، الدراسات الإسلامية، والآراء الفكرية لمدير حوزة خاتم النبيين (ص) بجاكرتا.',
-    fa: 'پایگاه نشر مقالات پژوهشی، مطالعات اسلامی و اندیشه‌های دینی به قلم مدیر حوزه علمیه خاتم النبیین (ص) جاکارتا.'
+    id: 'Selamat datang di ruang tulisan pribadi saya. Halaman ini memuat riset ilmiah, telaah studi keislaman, opini sosial-keagamaan, serta catatan refleksi dari <strong>Pondok Pesantren Khatamun Nabiyyin Jakarta</strong>.',
+    en: 'Welcome to my scholarly platform. This page features academic research, Islamic jurisprudence studies, socio-religious commentary, and reflective insights from <strong>Khatamun Nabiyyin Islamic Seminary, Jakarta</strong>.',
+    ar: 'مرحبًا بكم في مدونتي العلمية. تنشر هذه الصفحة البحوث الأكاديمية، والدراسات الفقهية، والآراء الفكرية والاجتماعية الصادرة عن <strong>حوزة خاتم النبيين (ص) بجاكرتا</strong>.',
+    fa: 'به پایگاه پژوهشی من خوش آمدید. این صفحه شامل پژوهش‌های علمی، مطالعات فقهی، یادداشت‌های اجتماعی-دینی و دیدگاه‌های تحلیلی از <strong>حوزه علمیه خاتم النبیین (ص) جاکارتا</strong> است.'
   },
   featured_section: {
     id: 'Tulisan Utama',
@@ -402,18 +414,26 @@ Meta Description: ${post.meta_description || ''}`;
 
   const fullTranslatedContent = translatedSections.join('');
 
+  const sourceHash = computeContentHash({
+    title: post.title,
+    meta: post.meta_description || '',
+    content: post.content,
+    cat: post.category || ''
+  });
+
   const result = {
     title: translatedMeta.title.trim(),
     meta_description: (translatedMeta.meta_description || '').trim(),
     category: (translatedMeta.category || post.category || 'Kajian').trim(),
     content: fullTranslatedContent.trim(),
     reading_time: calculateReadingTime(fullTranslatedContent),
-    lang_code: targetLang
+    lang_code: targetLang,
+    source_hash: sourceHash
   };
 
-  // Save / Cache in Database
+  // Save / Cache in Database with Content Hash
   if (post.id) {
-    savePostTranslation(post.id, targetLang, result);
+    savePostTranslation(post.id, targetLang, result, sourceHash);
   }
 
   return result;
@@ -472,14 +492,21 @@ ${pageData.content || ''}`;
     const data = await response.json();
     const parsed = extractJsonFromLlmResponse(data.message.content);
 
+    const sourceHash = computeContentHash({
+      title: pageData.title || '',
+      subtitle: pageData.subtitle || '',
+      content: pageData.content || ''
+    });
+
     const result = {
       title: parsed.title || pageData.title,
       subtitle: parsed.subtitle || pageData.subtitle,
       content: parsed.content || pageData.content,
-      lang_code: targetLang
+      lang_code: targetLang,
+      source_hash: sourceHash
     };
 
-    savePageTranslation(pageSlug, targetLang, result);
+    savePageTranslation(pageSlug, targetLang, result, sourceHash);
     return result;
   } catch (err) {
     clearTimeout(timeoutId);

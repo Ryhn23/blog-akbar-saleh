@@ -66,9 +66,11 @@
                         <%= siteName %>
                     </span>
                     <span class="text-xs text-gray-500 font-medium tracking-wide">
-                        <%= authorRole %>
+                        <%= typeof t !== 'undefined' ? t('site_tagline') : authorRole %>
                     </span>
-                          <!-- Desktop Navigation Links & Language Switcher -->
+                </a>
+
+                <!-- Desktop Navigation Links & Language Switcher -->
                 <nav class="hidden sm:flex items-center space-x-6">
                     <a href="/" class="text-sm font-medium transition-colors <%= currentPath === '/' ? 'text-emerald-800 font-semibold border-b-2 border-emerald-700 pb-0.5' : 'text-gray-600 hover:text-emerald-800' %>">
                         <%= typeof t !== 'undefined' ? t('nav_home') : 'Beranda' %>
@@ -144,9 +146,9 @@
             </div>
         </div>
 
-        <!-- Global AI Translation Loading Overlay Modal -->
-        <div id="ai-translate-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md hidden transition-opacity duration-300">
-            <div class="bg-white rounded-2xl border border-emerald-100 shadow-2xl p-6 sm:p-8 max-w-md w-full mx-4 text-center transform transition-all duration-300 scale-95" id="ai-translate-card">
+        <!-- Global AI Translation Loading Overlay Modal (Firmly Centered) -->
+        <div id="ai-translate-modal" class="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/75 backdrop-blur-md hidden transition-all duration-300 p-4">
+            <div class="bg-white rounded-3xl border border-emerald-100 shadow-2xl p-6 sm:p-8 max-w-md w-full mx-auto my-auto text-center transform transition-all duration-300 scale-95" id="ai-translate-card">
                 <!-- Glowing Pulsing Ring / Brain Animation -->
                 <div class="relative w-20 h-20 mx-auto mb-5">
                     <div class="absolute inset-0 rounded-full bg-emerald-400 opacity-25 animate-ping"></div>
@@ -215,6 +217,7 @@
             const s3 = document.getElementById('step-3');
 
             if (!modal) return;
+            document.body.style.overflow = 'hidden';
             const targetNames = { en: 'English', ar: 'العربية (Arabic)', fa: 'فارسی (Persian)', id: 'Bahasa Indonesia' };
             if (sub) sub.textContent = `Menyiapkan terjemahan ke bahasa ${targetNames[langCode] || langCode} via Ollama AI...`;
 
