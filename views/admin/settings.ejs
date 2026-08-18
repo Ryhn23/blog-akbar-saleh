@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pengaturan Akun | <%= siteName %> Admin</title>
+    <title>Pengaturan Akun & Blog | <%= siteName %> Admin</title>
     <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
@@ -36,99 +36,142 @@
     </nav>
 
     <!-- Main Content Area -->
-    <main class="flex-grow max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <main class="flex-grow max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         
-        <h1 class="text-xl font-serif font-bold text-gray-900 mb-6">Pengaturan Blog & Akun</h1>
+        <!-- Header & Action -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+                <h1 class="text-xl sm:text-2xl font-serif font-bold text-gray-900">Pengaturan Blog & Akun</h1>
+                <p class="text-xs text-gray-500 mt-0.5">Kelola identitas penulis, integrasi login Google, keamanan sandi, dan tampilan beranda.</p>
+            </div>
+            <a href="/" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 transition shadow-xs">
+                Pratinjau Beranda ↗
+            </a>
+        </div>
 
         <% if (error) { %>
-            <div class="bg-red-50 text-red-700 p-3 rounded-lg mb-5 text-xs border border-red-200">
-                <%= error %>
+            <div class="bg-red-50 text-red-700 p-4 rounded-xl mb-6 text-xs border border-red-200 flex items-start gap-2">
+                <span class="text-red-500 font-bold text-sm leading-none">!</span>
+                <div><%= error %></div>
             </div>
         <% } %>
 
         <% if (success) { %>
-            <div class="bg-emerald-50 text-emerald-800 p-3 rounded-lg mb-5 text-xs border border-emerald-200">
-                <%= success %>
+            <div class="bg-emerald-50 text-emerald-800 p-4 rounded-xl mb-6 text-xs border border-emerald-200 flex items-start gap-2">
+                <span class="text-emerald-600 font-bold text-sm leading-none">✓</span>
+                <div><%= success %></div>
             </div>
         <% } %>
 
-        <!-- Homepage Hero Header Settings Card -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <div class="flex items-center justify-between mb-2">
+        <!-- SECTION 1: Homepage Hero Header Settings Card (Spacious Layout) -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-7 mb-6">
+            <div class="flex items-center justify-between border-b border-gray-100 pb-4 mb-5">
                 <div>
-                    <h2 class="text-sm font-bold text-gray-900">Tampilan Header Beranda (Hero Section)</h2>
-                    <p class="text-xs text-gray-500">Sesuaikan teks bismillah, judul utama, dan kalimat pengantar di bagian atas halaman beranda.</p>
+                    <h2 class="text-sm sm:text-base font-bold text-gray-900">Tampilan Header Beranda (Hero Section)</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">Sesuaikan teks bismillah, judul utama, dan kalimat pengantar di bagian atas halaman beranda publik.</p>
                 </div>
-                <a href="/" target="_blank" class="text-xs text-emerald-800 font-semibold hover:underline">
-                    Lihat Beranda ↗
-                </a>
+                <span class="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                    Live Tampilan Depan
+                </span>
             </div>
             
-            <form action="/admin/settings/hero" method="POST" class="space-y-4 pt-2">
-                <div>
-                    <label for="hero_badge" class="block text-xs font-semibold text-gray-700 mb-1">Teks Badge (Bagian Atas)</label>
-                    <input type="text" id="hero_badge" name="hero_badge" value="<%= homeHero ? (homeHero.subtitle || '') : 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ' %>" placeholder="بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-emerald-700">
-                    <p class="text-[11px] text-gray-400 mt-1">Kosongkan jika tidak ingin menampilkan badge.</p>
+            <form action="/admin/settings/hero" method="POST" class="space-y-5">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    <!-- Left: Form Inputs -->
+                    <div class="lg:col-span-7 space-y-4">
+                        <div>
+                            <label for="hero_badge" class="block text-xs font-semibold text-gray-700 mb-1.5">Teks Badge / Kalimat Pembuka (Bagian Teratas)</label>
+                            <input type="text" id="hero_badge" name="hero_badge" value="<%= homeHero ? (homeHero.subtitle || '') : 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ' %>" placeholder="بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 focus:bg-white transition">
+                            <p class="text-[11px] text-gray-400 mt-1">Dapat diisi basmalah atau kalimat pengantar. Kosongkan jika tidak ingin ditampilkan.</p>
+                        </div>
+
+                        <div>
+                            <label for="hero_title" class="block text-xs font-semibold text-gray-700 mb-1.5">Judul Utama Beranda</label>
+                            <textarea id="hero_title" name="hero_title" rows="3" required class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm font-serif font-bold text-gray-900 focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 focus:bg-white leading-relaxed transition"><%= homeHero ? (homeHero.title || '') : 'Catatan, Kajian Ilmiah & <span class="text-emerald-800">Pemikiran Keislaman</span>' %></textarea>
+                            <p class="text-[11px] text-gray-400 mt-1">Mendukung tag HTML warna seperti: <code class="text-emerald-800 bg-emerald-50 px-1 py-0.5 rounded">&lt;span class="text-emerald-800"&gt;Teks Hijau&lt;/span&gt;</code></p>
+                        </div>
+
+                        <div>
+                            <label for="hero_content" class="block text-xs font-semibold text-gray-700 mb-1.5">Paragraf Pengantar & Deskripsi Singkat</label>
+                            <textarea id="hero_content" name="hero_content" rows="4" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 focus:bg-white leading-relaxed transition"><%= homeHero ? (homeHero.content || '') : 'Selamat datang di ruang tulisan pribadi saya.' %></textarea>
+                            <p class="text-[11px] text-gray-400 mt-1">Mendukung tag HTML seperti <code class="text-emerald-800 bg-emerald-50 px-1 py-0.5 rounded">&lt;strong&gt;tebal&lt;/strong&gt;</code> atau <code class="text-emerald-800 bg-emerald-50 px-1 py-0.5 rounded">&lt;em&gt;miring&lt;/em&gt;</code>.</p>
+                        </div>
+                    </div>
+
+                    <!-- Right: Live Visual Preview Card -->
+                    <div class="lg:col-span-5 flex flex-col">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">Pratinjau Tampilan Beranda</label>
+                        <div class="bg-radial from-emerald-50/50 via-white to-gray-50/80 border border-emerald-100 rounded-xl p-5 flex-grow flex flex-col justify-center text-center shadow-xs">
+                            <div class="inline-block mx-auto mb-2 text-xs font-arabic text-emerald-800 bg-emerald-100/70 px-3 py-1 rounded-full font-medium">
+                                <%= homeHero && homeHero.subtitle ? homeHero.subtitle : 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ' %>
+                            </div>
+                            <h3 class="font-serif font-bold text-base sm:text-lg text-gray-900 mb-2 leading-snug">
+                                <%- homeHero && homeHero.title ? homeHero.title : 'Catatan, Kajian Ilmiah & <span class="text-emerald-800">Pemikiran Keislaman</span>' %>
+                            </h3>
+                            <p class="text-xs text-gray-600 leading-relaxed max-w-xs mx-auto">
+                                <%- homeHero && homeHero.content ? homeHero.content : 'Selamat datang di ruang tulisan pribadi saya.' %>
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
-                <div>
-                    <label for="hero_title" class="block text-xs font-semibold text-gray-700 mb-1">Judul Utama Beranda</label>
-                    <textarea id="hero_title" name="hero_title" rows="2" required class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm font-serif font-bold text-gray-900 focus:ring-1 focus:ring-emerald-700"><%= homeHero ? (homeHero.title || '') : 'Catatan, Kajian Ilmiah & <span class="text-emerald-800">Pemikiran Keislaman</span>' %></textarea>
-                    <p class="text-[11px] text-gray-400 mt-1">Gunakan tag HTML seperti <code class="text-emerald-800">&lt;span class="text-emerald-800"&gt;Teks Hijau&lt;/span&gt;</code> untuk memberi aksen warna.</p>
-                </div>
-
-                <div>
-                    <label for="hero_content" class="block text-xs font-semibold text-gray-700 mb-1">Paragraf Pengantar</label>
-                    <textarea id="hero_content" name="hero_content" rows="3" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs leading-relaxed focus:ring-1 focus:ring-emerald-700"><%= homeHero ? (homeHero.content || '') : 'Selamat datang di ruang tulisan pribadi saya.' %></textarea>
-                    <p class="text-[11px] text-gray-400 mt-1">Dapat menggunakan tag HTML seperti <code class="text-emerald-800">&lt;strong&gt;teks tebal&lt;/strong&gt;</code>.</p>
-                </div>
-
-                <div class="pt-2 flex justify-end">
-                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold transition shadow-xs">
+                <div class="pt-3 border-t border-gray-100 flex justify-end">
+                    <button type="submit" class="px-5 py-2.5 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold transition shadow-xs cursor-pointer">
                         Simpan Tampilan Beranda
                     </button>
                 </div>
             </form>
         </div>
 
-        <!-- Profile Settings Card -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <h2 class="text-sm font-bold text-gray-900 mb-1">Informasi Penulis & Admin</h2>
-            <p class="text-xs text-gray-500 mb-4">Email Google yang tertera di sini akan mendapatkan badge otomatis <strong>"Penulis Asli"</strong> saat memberikan tanggapan di artikel.</p>
+        <!-- SECTION 2: Profile & Password Grid (2 Columns on Large Screens) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
-            <form action="/admin/settings/profile" method="POST" class="space-y-3.5">
+            <!-- Profile Settings Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-7 flex flex-col justify-between">
                 <div>
-                    <label for="name" class="block text-xs font-semibold text-gray-700 mb-1">Nama Lengkap & Gelar</label>
-                    <input type="text" id="name" name="name" value="<%= user ? (user.name || '') : '' %>" required class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-emerald-700">
-                </div>
-                <div>
-                    <label for="email" class="block text-xs font-semibold text-gray-700 mb-1">Email Google Resmi Penulis</label>
-                    <input type="email" id="email" name="email" value="<%= user ? (user.email || '') : '' %>" placeholder="contoh: akbarsaleh@gmail.com" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-emerald-700">
-                    <p class="text-[11px] text-gray-400 mt-1">Akun Google dengan email ini dapat login langsung via tombol Google dan otomatis berstatus sebagai <strong>Penulis Asli</strong>.</p>
-                </div>
-                <div>
-                    <label for="username" class="block text-xs font-semibold text-gray-700 mb-1">Nama Pengguna (Username Login Biasa)</label>
-                    <input type="text" id="username" name="username" value="<%= user ? user.username : '' %>" required class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-emerald-700">
-                </div>
-
-                <!-- Google Connection Status -->
-                <div class="pt-3 pb-1 border-t border-gray-100">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                        <span class="text-gray-600 font-medium">Status Akun Google:</span>
-                        <% if (user && (user.google_id || user.email)) { %>
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <span class="inline-flex items-center gap-1.5 text-emerald-800 font-bold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                                    <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
-                                    Terhubung (<%= user.email || user.google_id %>)
-                                </span>
-                            </div>
-                        <% } else { %>
-                            <span class="text-gray-400">Belum terhubung ke akun Google manapun.</span>
-                        <% } %>
+                    <div class="border-b border-gray-100 pb-3 mb-4">
+                        <h2 class="text-sm sm:text-base font-bold text-gray-900">Informasi Penulis & Admin</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Identitas admin dan integrasi email Google resmi.</p>
                     </div>
+                    
+                    <form id="form-profile" action="/admin/settings/profile" method="POST" class="space-y-4">
+                        <div>
+                            <label for="name" class="block text-xs font-semibold text-gray-700 mb-1.5">Nama Lengkap & Gelar</label>
+                            <input type="text" id="name" name="name" value="<%= user ? (user.name || '') : '' %>" required class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 focus:bg-white transition">
+                        </div>
+
+                        <div>
+                            <label for="email" class="block text-xs font-semibold text-gray-700 mb-1.5">Email Google Resmi Penulis</label>
+                            <input type="email" id="email" name="email" value="<%= user ? (user.email || '') : '' %>" placeholder="contoh: akbarsaleh@gmail.com" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 focus:bg-white transition">
+                            <p class="text-[11px] text-gray-400 mt-1">Email Google ini akan mendapatkan badge otomatis <strong>"Penulis Asli"</strong> saat menanggapi artikel.</p>
+                        </div>
+
+                        <div>
+                            <label for="username" class="block text-xs font-semibold text-gray-700 mb-1.5">Nama Pengguna (Username Login)</label>
+                            <input type="text" id="username" name="username" value="<%= user ? user.username : '' %>" required class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 focus:bg-white transition">
+                        </div>
+
+                        <!-- Google Connection Status -->
+                        <div class="pt-3 pb-1 border-t border-gray-100">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                                <span class="text-gray-600 font-medium">Status Akun Google:</span>
+                                <% if (user && (user.google_id || user.email)) { %>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="inline-flex items-center gap-1.5 text-emerald-800 font-bold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                                            <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                                            Terhubung (<%= user.email || user.google_id %>)
+                                        </span>
+                                    </div>
+                                <% } else { %>
+                                    <span class="text-gray-400">Belum terhubung ke akun Google manapun.</span>
+                                <% } %>
+                            </div>
+                        </div>
+                    </form>
                 </div>
 
-                <div class="pt-2 flex items-center justify-between">
+                <div class="pt-4 mt-2 border-t border-gray-100 flex items-center justify-between">
                     <div>
                         <% if (user && (user.google_id || user.email)) { %>
                             <button type="submit" form="form-unbind" class="text-xs text-red-600 hover:text-red-800 font-semibold underline cursor-pointer">
@@ -136,40 +179,48 @@
                             </button>
                         <% } %>
                     </div>
-                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold transition shadow-xs">
-                        Simpan Perubahan Profil
+                    <button type="submit" form="form-profile" class="px-5 py-2.5 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold transition shadow-xs cursor-pointer">
+                        Simpan Profil
                     </button>
                 </div>
-            </form>
 
-            <% if (user && (user.google_id || user.email)) { %>
-                <form id="form-unbind" action="/admin/settings/unbind-google" method="POST" onsubmit="return confirm('Yakin ingin memutuskan/menghapus tautan akun Google ini dari akun Admin?');" class="hidden">
-                </form>
-            <% } %>
-        </div>
+                <% if (user && (user.google_id || user.email)) { %>
+                    <form id="form-unbind" action="/admin/settings/unbind-google" method="POST" onsubmit="return confirm('Yakin ingin memutuskan/menghapus tautan akun Google ini dari akun Admin?');" class="hidden">
+                    </form>
+                <% } %>
+            </div>
 
-        <!-- Password Change Card -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 class="text-sm font-bold text-gray-900 mb-3">Ubah Kata Sandi Kredensial</h2>
-            <form action="/admin/settings/password" method="POST" class="space-y-3.5">
+            <!-- Password Change Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-7 flex flex-col justify-between">
                 <div>
-                    <label for="current_password" class="block text-xs font-semibold text-gray-700 mb-1">Kata Sandi Saat Ini</label>
-                    <input type="password" id="current_password" name="current_password" required class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-emerald-700">
+                    <div class="border-b border-gray-100 pb-3 mb-4">
+                        <h2 class="text-sm sm:text-base font-bold text-gray-900">Ubah Kata Sandi Kredensial</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Perbarui kata sandi untuk login manual administrator.</p>
+                    </div>
+
+                    <form id="form-password" action="/admin/settings/password" method="POST" class="space-y-4">
+                        <div>
+                            <label for="current_password" class="block text-xs font-semibold text-gray-700 mb-1.5">Kata Sandi Saat Ini</label>
+                            <input type="password" id="current_password" name="current_password" required class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 focus:bg-white transition">
+                        </div>
+                        <div>
+                            <label for="new_password" class="block text-xs font-semibold text-gray-700 mb-1.5">Kata Sandi Baru</label>
+                            <input type="password" id="new_password" name="new_password" required minlength="6" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 focus:bg-white transition">
+                        </div>
+                        <div>
+                            <label for="confirm_password" class="block text-xs font-semibold text-gray-700 mb-1.5">Konfirmasi Kata Sandi Baru</label>
+                            <input type="password" id="confirm_password" name="confirm_password" required minlength="6" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 focus:bg-white transition">
+                        </div>
+                    </form>
                 </div>
-                <div>
-                    <label for="new_password" class="block text-xs font-semibold text-gray-700 mb-1">Kata Sandi Baru</label>
-                    <input type="password" id="new_password" name="new_password" required minlength="6" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-emerald-700">
-                </div>
-                <div>
-                    <label for="confirm_password" class="block text-xs font-semibold text-gray-700 mb-1">Konfirmasi Kata Sandi Baru</label>
-                    <input type="password" id="confirm_password" name="confirm_password" required minlength="6" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-emerald-700">
-                </div>
-                <div class="pt-2 flex justify-end">
-                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold transition shadow-xs">
+
+                <div class="pt-4 mt-2 border-t border-gray-100 flex justify-end">
+                    <button type="submit" form="form-password" class="px-5 py-2.5 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold transition shadow-xs cursor-pointer">
                         Perbarui Kata Sandi
                     </button>
                 </div>
-            </form>
+            </div>
+
         </div>
 
     </main>

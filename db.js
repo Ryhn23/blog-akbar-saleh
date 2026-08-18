@@ -72,6 +72,8 @@ function initDB() {
       category TEXT DEFAULT 'Kajian Keislaman',
       cover_image TEXT,
       is_featured INTEGER DEFAULT 0,
+      is_published INTEGER DEFAULT 1,
+      is_hidden INTEGER DEFAULT 0,
       reading_time INTEGER DEFAULT 1,
       attachment_url TEXT,
       attachment_name TEXT,
@@ -85,6 +87,10 @@ function initDB() {
   try { db.exec('ALTER TABLE posts ADD COLUMN attachment_url TEXT'); } catch (e) {}
   try { db.exec('ALTER TABLE posts ADD COLUMN attachment_name TEXT'); } catch (e) {}
   try { db.exec('ALTER TABLE posts ADD COLUMN attachment_size INTEGER DEFAULT 0'); } catch (e) {}
+  try { db.exec('ALTER TABLE posts ADD COLUMN is_published INTEGER DEFAULT 1'); } catch (e) {}
+  try { db.exec('ALTER TABLE posts ADD COLUMN is_hidden INTEGER DEFAULT 0'); } catch (e) {}
+  try { db.exec('UPDATE posts SET is_published = 1 WHERE is_published IS NULL'); } catch (e) {}
+  try { db.exec('UPDATE posts SET is_hidden = 0 WHERE is_hidden IS NULL'); } catch (e) {}
 
   // Create Comments Table
   db.exec(`

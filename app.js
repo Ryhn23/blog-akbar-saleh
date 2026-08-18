@@ -198,8 +198,8 @@ const requireAuth = (req, res, next) => {
 // Dynamic XML Sitemap for Googlebot
 app.get('/sitemap.xml', (req, res) => {
   const baseUrl = process.env.APP_URL || `http://localhost:${PORT}`;
-  const posts = getAll('SELECT slug, updated_at, created_at FROM posts ORDER BY created_at DESC');
-  const categories = getAll('SELECT DISTINCT category FROM posts');
+  const posts = getAll('SELECT slug, updated_at, created_at FROM posts WHERE is_published = 1 AND is_hidden = 0 ORDER BY created_at DESC');
+  const categories = getAll('SELECT DISTINCT category FROM posts WHERE is_published = 1 AND is_hidden = 0');
 
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
   xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n`;
@@ -283,7 +283,7 @@ const sendRssFeed = (req, res) => {
   const siteDesc = process.env.SITE_DESCRIPTION || 'Ruang publikasi artikel ilmiah dan kajian keislaman oleh Akbar Saleh, B.A.';
   const authorName = process.env.AUTHOR_NAME || 'Akbar Saleh, B.A.';
   
-  const posts = getAll('SELECT * FROM posts ORDER BY created_at DESC LIMIT 20');
+  const posts = getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 ORDER BY created_at DESC LIMIT 20');
 
   let rss = `<?xml version="1.0" encoding="UTF-8"?>\n`;
   rss += `<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">\n`;
@@ -335,10 +335,10 @@ app.get('/', (req, res) => {
   const authorName = process.env.AUTHOR_NAME || 'Akbar Saleh, B.A.';
   const authorRole = process.env.AUTHOR_ROLE || 'Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta';
 
-  const featuredPosts = getAll('SELECT * FROM posts WHERE is_featured = 1 ORDER BY created_at DESC LIMIT 2');
-  const recentPosts = getAll('SELECT * FROM posts ORDER BY created_at DESC LIMIT 6');
-  const categories = getAll('SELECT category, COUNT(*) as count FROM posts GROUP BY category ORDER BY count DESC');
-  const totalPosts = getOne('SELECT COUNT(*) as total FROM posts')?.total || 0;
+  const featuredPosts = getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 AND is_featured = 1 ORDER BY created_at DESC LIMIT 2');
+  const recentPosts = getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 ORDER BY created_at DESC LIMIT 6');
+  const categories = getAll('SELECT category, COUNT(*) as count FROM posts WHERE is_published = 1 AND is_hidden = 0 GROUP BY category ORDER BY count DESC');
+  const totalPosts = getOne('SELECT COUNT(*) as total FROM posts WHERE is_published = 1 AND is_hidden = 0')?.total || 0;
 
   const homeHero = getOne('SELECT * FROM pages WHERE slug = ?', ['home']);
   const heroBadge = homeHero ? homeHero.subtitle : 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
@@ -393,7 +393,7 @@ app.get('/blog', (req, res) => {
   const baseUrl = process.env.APP_URL || `http://localhost:${PORT}`;
   const authorName = process.env.AUTHOR_NAME || 'Akbar Saleh, B.A.';
   const { q, category } = req.query;
-  let sql = 'SELECT * FROM posts WHERE 1=1';
+  let sql = 'SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0';
   const params = [];
 
   if (category) {
@@ -410,7 +410,7 @@ app.get('/blog', (req, res) => {
   sql += ' ORDER BY created_at DESC';
 
   const posts = getAll(sql, params);
-  const categories = getAll('SELECT category, COUNT(*) as count FROM posts GROUP BY category ORDER BY count DESC');
+  const categories = getAll('SELECT category, COUNT(*) as count FROM posts WHERE is_published = 1 AND is_hidden = 0 GROUP BY category ORDER BY count DESC');
 
   const pageTitle = category ? `Kajian ${category}` : (q ? `Hasil Pencarian: "${q}"` : 'Arsip Kajian & Tulisan Ilmiah');
   const canonicalUrl = category ? `${baseUrl}/blog?category=${encodeURIComponent(category)}` : `${baseUrl}/blog`;
@@ -652,9 +652,20 @@ app.get('/blog/:slug', (req, res) => {
     return res.status(404).render('404');
   }
 
+  const isUnpublishedOrHidden = post.is_published === 0 || post.is_hidden === 1;
+  const isAdmin = Boolean(req.session.userId);
+
+  if (isUnpublishedOrHidden && !isAdmin) {
+    return res.status(404).render('404');
+  }
+
+  const previewReason = post.is_published === 0 
+    ? 'DRAF (Belum Diterbitkan)' 
+    : (post.is_hidden === 1 ? 'DISEMBUNYIKAN DARI PUBLIK' : null);
+
   // Get related posts from same category
   const relatedPosts = getAll(
-    'SELECT * FROM posts WHERE id != ? AND category = ? ORDER BY created_at DESC LIMIT 3',
+    'SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 AND id != ? AND category = ? ORDER BY created_at DESC LIMIT 3',
     [post.id, post.category]
   );
 
@@ -783,7 +794,9 @@ app.get('/blog/:slug', (req, res) => {
     currentSort: sortMode,
     canonicalUrl: postUrl,
     schemaJsonLd,
-    relatedPosts: relatedPosts.length > 0 ? relatedPosts : getAll('SELECT * FROM posts WHERE id != ? ORDER BY created_at DESC LIMIT 3', [post.id])
+    isAdminPreview: isUnpublishedOrHidden && isAdmin,
+    previewReason,
+    relatedPosts: relatedPosts.length > 0 ? relatedPosts : getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 AND id != ? ORDER BY created_at DESC LIMIT 3', [post.id])
   });
 });
 
@@ -791,6 +804,10 @@ app.get('/blog/:slug', (req, res) => {
 app.get('/blog/:slug/pdf', (req, res) => {
   const post = getOne('SELECT * FROM posts WHERE slug = ?', [req.params.slug]);
   if (!post) {
+    return res.status(404).render('404');
+  }
+
+  if ((post.is_published === 0 || post.is_hidden === 1) && !req.session.userId) {
     return res.status(404).render('404');
   }
 
@@ -846,6 +863,10 @@ app.post('/blog/:slug/comments', commentLimiter, (req, res) => {
     allowedTags: ['b', 'i', 'em', 'strong', 'a', 'p', 'br'],
     allowedAttributes: {
       'a': ['href', 'target', 'rel']
+    },
+    allowedSchemes: ['http', 'https'],
+    transformTags: {
+      'a': sanitizeHtml.simpleTransform('a', { target: '_blank', rel: 'nofollow noopener noreferrer' })
     }
   });
 
@@ -973,7 +994,7 @@ app.get('/admin/posts/new', requireAuth, (req, res) => {
 });
 
 app.post('/admin/posts', requireAuth, postUploadMiddleware, (req, res) => {
-  const { title, content, meta_description, category, is_featured, cover_url } = req.body;
+  const { title, content, meta_description, category, is_featured, is_published, is_hidden, cover_url } = req.body;
   
   let baseSlug = slugify(title, { lower: true, strict: true }) || 'post-' + Date.now();
   let slug = baseSlug;
@@ -991,14 +1012,16 @@ app.post('/admin/posts', requireAuth, postUploadMiddleware, (req, res) => {
   const attachment_size = attachmentFile ? attachmentFile.size : 0;
 
   const reading_time = calculateReadingTime(content);
-  const featured = is_featured ? 1 : 0;
+  const featured = is_featured === '1' || is_featured === 'on' ? 1 : 0;
+  const published = is_published === '1' || is_published === 'on' ? 1 : 0;
+  const hidden = is_hidden === '1' || is_hidden === 'on' ? 1 : 0;
   const postCategory = category?.trim() || 'Kajian Keislaman';
 
   try {
     run(
-      `INSERT INTO posts (title, slug, content, meta_description, category, cover_image, is_featured, reading_time, attachment_url, attachment_name, attachment_size)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [title, slug, content, meta_description, postCategory, cover_image, featured, reading_time, attachment_url, attachment_name, attachment_size]
+      `INSERT INTO posts (title, slug, content, meta_description, category, cover_image, is_featured, is_published, is_hidden, reading_time, attachment_url, attachment_name, attachment_size)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [title, slug, content, meta_description, postCategory, cover_image, featured, published, hidden, reading_time, attachment_url, attachment_name, attachment_size]
     );
     res.redirect('/admin');
   } catch (error) {
@@ -1136,7 +1159,7 @@ app.post('/admin/comments/:id/delete', requireAuth, (req, res) => {
 });
 
 app.post('/admin/posts/:id', requireAuth, postUploadMiddleware, (req, res) => {
-  const { title, content, meta_description, category, is_featured, cover_url, existing_cover, existing_attachment_url, existing_attachment_name, existing_attachment_size, delete_attachment } = req.body;
+  const { title, content, meta_description, category, is_featured, is_published, is_hidden, cover_url, existing_cover, existing_attachment_url, existing_attachment_name, existing_attachment_size, delete_attachment } = req.body;
   const post = getOne('SELECT * FROM posts WHERE id = ?', [req.params.id]);
   if (!post) return res.status(404).send('Artikel tidak ditemukan.');
 
@@ -1169,15 +1192,17 @@ app.post('/admin/posts/:id', requireAuth, postUploadMiddleware, (req, res) => {
   }
 
   const reading_time = calculateReadingTime(content);
-  const featured = is_featured ? 1 : 0;
+  const featured = is_featured === '1' || is_featured === 'on' ? 1 : 0;
+  const published = is_published === '1' || is_published === 'on' ? 1 : 0;
+  const hidden = is_hidden === '1' || is_hidden === 'on' ? 1 : 0;
   const postCategory = category?.trim() || 'Umum';
 
   try {
     run(
       `UPDATE posts 
-       SET title = ?, slug = ?, content = ?, meta_description = ?, category = ?, cover_image = ?, is_featured = ?, reading_time = ?, attachment_url = ?, attachment_name = ?, attachment_size = ?, updated_at = CURRENT_TIMESTAMP 
+       SET title = ?, slug = ?, content = ?, meta_description = ?, category = ?, cover_image = ?, is_featured = ?, is_published = ?, is_hidden = ?, reading_time = ?, attachment_url = ?, attachment_name = ?, attachment_size = ?, updated_at = CURRENT_TIMESTAMP 
        WHERE id = ?`,
-      [title, slug, content, meta_description, postCategory, cover_image, featured, reading_time, attachment_url, attachment_name, attachment_size, req.params.id]
+      [title, slug, content, meta_description, postCategory, cover_image, featured, published, hidden, reading_time, attachment_url, attachment_name, attachment_size, req.params.id]
     );
     res.redirect('/admin');
   } catch (error) {
@@ -1186,6 +1211,26 @@ app.post('/admin/posts/:id', requireAuth, postUploadMiddleware, (req, res) => {
       error: 'Gagal memperbarui artikel: ' + error.message
     });
   }
+});
+
+// Quick Toggle Published Status (Publish / Draft)
+app.post('/admin/posts/:id/toggle-publish', requireAuth, (req, res) => {
+  const post = getOne('SELECT id, is_published FROM posts WHERE id = ?', [req.params.id]);
+  if (post) {
+    const newStatus = post.is_published === 1 ? 0 : 1;
+    run('UPDATE posts SET is_published = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [newStatus, post.id]);
+  }
+  res.redirect('/admin');
+});
+
+// Quick Toggle Hidden Status (Visible / Hidden)
+app.post('/admin/posts/:id/toggle-visibility', requireAuth, (req, res) => {
+  const post = getOne('SELECT id, is_hidden FROM posts WHERE id = ?', [req.params.id]);
+  if (post) {
+    const newStatus = post.is_hidden === 1 ? 0 : 1;
+    run('UPDATE posts SET is_hidden = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [newStatus, post.id]);
+  }
+  res.redirect('/admin');
 });
 
 // Delete Post

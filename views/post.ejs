@@ -10,6 +10,18 @@
 <article class="py-8 sm:py-12 bg-white min-h-[80vh]">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         
+        <% if (typeof isAdminPreview !== 'undefined' && isAdminPreview) { %>
+            <div class="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                <div class="flex items-center gap-2">
+                    <span class="p-1 rounded bg-amber-200 text-amber-900 font-bold">🔒 Mode Pratinjau Admin</span>
+                    <span class="font-medium">Artikel ini berstatus <strong class="underline"><%= previewReason %></strong> dan tidak dapat diakses oleh publik.</span>
+                </div>
+                <a href="/admin/posts/<%= post.id %>/edit" class="px-3 py-1 bg-amber-800 text-white rounded-lg font-semibold hover:bg-amber-900 transition shrink-0">
+                    Sunting / Publikasikan ↗
+                </a>
+            </div>
+        <% } %>
+        
         <!-- Breadcrumb Navigation & Top Actions -->
         <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
             <nav aria-label="Breadcrumb" class="flex items-center space-x-1.5 text-xs text-gray-500 font-medium overflow-x-auto whitespace-nowrap py-1">
