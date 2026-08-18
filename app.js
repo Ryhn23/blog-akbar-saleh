@@ -33,6 +33,7 @@ const { generateArticlePdf } = require('./services/pdf-service');
 const { 
   SUPPORTED_LANGUAGES, 
   t, 
+  getOrTranslateSiteProfile,
   translatePostToLanguage, 
   translatePageToLanguage, 
   translatePostAllLanguages 
@@ -179,19 +180,36 @@ app.use(session({
 
 app.use(passport.initialize());
 
-// Global Template Variables Middleware
-app.use((req, res, next) => {
-  res.locals.siteName = process.env.SITE_NAME || 'Akbar Saleh';
-  res.locals.siteTagline = process.env.SITE_TAGLINE || 'Kajian & Pemikiran Keislaman';
-  res.locals.siteDescription = process.env.SITE_DESCRIPTION || 'Ruang publikasi artikel ilmiah, studi keislaman, opini, dan catatan pemikiran oleh Akbar Saleh, B.A., Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta.';
-  res.locals.authorName = process.env.AUTHOR_NAME || 'Akbar Saleh, B.A.';
-  res.locals.authorRole = process.env.AUTHOR_ROLE || 'Kyai & Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta';
-  res.locals.authorBio = process.env.AUTHOR_BIO || 'Kyai dan Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta. Menulis seputar studi keislaman, riset keilmuan, dan analisis sosial keagamaan.';
-  res.locals.authorEmail = process.env.AUTHOR_EMAIL || 'akbarsaleh@khatamunnabiyyin.com';
-  res.locals.authorLocation = process.env.AUTHOR_LOCATION || 'Jakarta, Indonesia';
-  res.locals.appUrl = process.env.APP_URL || `http://localhost:${PORT}`;
+// Global Template Variables Middleware (Dynamic .env & Multi-Language Support)
+app.use(async (req, res, next) => {
   const langQuery = (req.query.lang || 'id').toLowerCase();
   const currentLang = SUPPORTED_LANGUAGES[langQuery] ? langQuery : 'id';
+
+  let siteProfile = {
+    siteName: process.env.SITE_NAME || 'Akbar Saleh',
+    siteTagline: process.env.SITE_TAGLINE || 'Kajian & Pemikiran Keislaman',
+    authorRole: process.env.AUTHOR_ROLE || 'Kyai & Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta',
+    authorBio: process.env.AUTHOR_BIO || 'Kyai dan Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta. Menulis seputar studi keislaman, riset keilmuan, dan analisis sosial keagamaan.',
+    authorLocation: process.env.AUTHOR_LOCATION || 'Jakarta, Indonesia'
+  };
+
+  if (currentLang !== 'id') {
+    try {
+      siteProfile = await getOrTranslateSiteProfile(currentLang);
+    } catch (err) {
+      console.warn(`[Site Profile Middleware] Translation warning for ${currentLang}:`, err.message);
+    }
+  }
+
+  res.locals.siteName = siteProfile.siteName;
+  res.locals.siteTagline = siteProfile.siteTagline;
+  res.locals.siteDescription = process.env.SITE_DESCRIPTION || 'Ruang publikasi artikel ilmiah, studi keislaman, opini, dan catatan pemikiran oleh Akbar Saleh, B.A.';
+  res.locals.authorName = process.env.AUTHOR_NAME || 'Akbar Saleh, B.A.';
+  res.locals.authorRole = siteProfile.authorRole;
+  res.locals.authorBio = siteProfile.authorBio;
+  res.locals.authorEmail = process.env.AUTHOR_EMAIL || 'akbarsaleh@khatamunnabiyyin.com';
+  res.locals.authorLocation = siteProfile.authorLocation;
+  res.locals.appUrl = process.env.APP_URL || `http://localhost:${PORT}`;
   res.locals.currentLang = currentLang;
   res.locals.isRtl = (currentLang === 'ar' || currentLang === 'fa');
   res.locals.supportedLanguages = Object.values(SUPPORTED_LANGUAGES);
@@ -417,7 +435,7 @@ app.get('/', async (req, res) => {
         "@id": `${baseUrl}/#website`,
         "url": baseUrl,
         "name": siteName,
-        "description": t('site_tagline', targetLang),
+        "description": res.locals.siteTagline,
         "inLanguage": targetLang === 'ar' ? 'ar' : (targetLang === 'fa' ? 'fa' : (targetLang === 'en' ? 'en' : 'id-ID')),
         "potentialAction": {
           "@type": "SearchAction",
@@ -429,7 +447,7 @@ app.get('/', async (req, res) => {
         "@type": "Person",
         "@id": `${baseUrl}/#author`,
         "name": process.env.AUTHOR_NAME || 'Akbar Saleh, B.A.',
-        "jobTitle": t('author_role', targetLang),
+        "jobTitle": res.locals.authorRole,
         "worksFor": {
           "@type": "Organization",
           "name": "Pondok Pesantren Khatamun Nabiyyin Jakarta"

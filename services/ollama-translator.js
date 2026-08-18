@@ -1,4 +1,4 @@
-const { calculateReadingTime, computeContentHash, savePostTranslation, savePageTranslation } = require('../db');
+const { calculateReadingTime, computeContentHash, savePostTranslation, savePageTranslation, getPageTranslation } = require('../db');
 
 const OLLAMA_HOST = (process.env.OLLAMA_HOST || 'https://ai.khatamunnabiyyin.net').replace(/\/+$/, '');
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma4:31b-cloud';
@@ -39,7 +39,7 @@ const SUPPORTED_LANGUAGES = {
 };
 
 /**
- * Global UI Localized Dictionary for all 4 languages
+ * Global UI Localized Dictionary for interface elements, buttons, and navigation
  */
 const UI_DICTIONARY = {
   nav_home: {
@@ -65,30 +65,6 @@ const UI_DICTIONARY = {
     en: 'Dashboard',
     ar: 'لوحة التحكم',
     fa: 'داشبورد'
-  },
-  site_tagline: {
-    id: 'Blog dan Kumpulan Tulisan Ilmiah',
-    en: 'Scholarly Blog & Islamic Research Essays',
-    ar: 'مدونة ومقالات بحثية إسلامية',
-    fa: 'وبلاگ و مقالات پژوهشی اسلامی'
-  },
-  author_role: {
-    id: 'Kyai & Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta',
-    en: 'Kyai & Director of Khatamun Nabiyyin Islamic Seminary, Jakarta',
-    ar: 'مدير حوزة خاتم النبيين (ص) بجاكرتا',
-    fa: 'مدیر حوزه علمیه خاتم النبیین (ص) جاکارتا'
-  },
-  hero_default_title: {
-    id: 'Catatan, Kajian Ilmiah & <span class="text-emerald-800">Pemikiran Keislaman</span>',
-    en: 'Notes, Scholarly Studies & <span class="text-emerald-800">Islamic Philosophy</span>',
-    ar: 'ملاحظات، دراسات علمية و<span class="text-emerald-800">فكر إسلامي</span>',
-    fa: 'یادداشت‌ها، مطالعات علمی و <span class="text-emerald-800">اندیشه اسلامی</span>'
-  },
-  hero_default_content: {
-    id: 'Selamat datang di ruang tulisan pribadi saya. Halaman ini memuat riset ilmiah, telaah studi keislaman, opini sosial-keagamaan, serta catatan refleksi dari <strong>Pondok Pesantren Khatamun Nabiyyin Jakarta</strong>.',
-    en: 'Welcome to my scholarly platform. This page features academic research, Islamic jurisprudence studies, socio-religious commentary, and reflective insights from <strong>Khatamun Nabiyyin Islamic Seminary, Jakarta</strong>.',
-    ar: 'مرحبًا بكم في مدونتي العلمية. تنشر هذه الصفحة البحوث الأكاديمية، والدراسات الفقهية، والآراء الفكرية والاجتماعية الصادرة عن <strong>حوزة خاتم النبيين (ص) بجاكرتا</strong>.',
-    fa: 'به پایگاه پژوهشی من خوش آمدید. این صفحه شامل پژوهش‌های علمی، مطالعات فقهی، یادداشت‌های اجتماعی-دینی و دیدگاه‌های تحلیلی از <strong>حوزه علمیه خاتم النبیین (ص) جاکارتا</strong> است.'
   },
   featured_section: {
     id: 'Tulisan Utama',
@@ -198,125 +174,29 @@ const UI_DICTIONARY = {
     ar: 'ملف المرفقات / ورقة بحثية',
     fa: 'پیوست سند / مقاله'
   },
-  file_size: {
-    id: 'Ukuran berkas',
-    en: 'File size',
-    ar: 'حجم الملف',
-    fa: 'حجم فایل'
-  },
-  download_document: {
-    id: 'Unduh Dokumen',
-    en: 'Download Document',
+  download_attachment: {
+    id: 'Unduh Berkas',
+    en: 'Download File',
     ar: 'تحميل الملف',
     fa: 'دانلود فایل'
   },
-  related_posts: {
-    id: 'Tulisan Terkait Lainnya',
-    en: 'Related Articles',
-    ar: 'مقالات ذات صلة',
-    fa: 'مطالب مرتبط دیگر'
+  related_articles: {
+    id: 'Kajian Terkait Lainnya',
+    en: 'Related Scholarly Articles',
+    ar: 'مقالات ودراسات ذات صلة',
+    fa: 'مقالات و پژوهش‌های مرتبط'
   },
-  sort_label: {
+  discussion_intro: {
+    id: 'Ruang pertukaran gagasan, catatan kritis, dan dialog ilmiah yang santun.',
+    en: 'A platform for intellectual exchange, constructive insights, and respectful academic dialogue.',
+    ar: 'مساحة لتبادل الأفكار، والرؤى النقدية، والحوار العلمي البنّاء.',
+    fa: 'فضایی برای تبادل اندیشه، یادداشت‌های انتقادی و گفتگوی علمی سازنده.'
+  },
+  sort_by: {
     id: 'Urutan:',
-    en: 'Sort:',
+    en: 'Sort by:',
     ar: 'الترتيب:',
-    fa: 'ترتیب:'
-  },
-  comment_login_notice: {
-    id: 'Untuk menjaga adab diskusi dan mencegah spam, silakan masuk menggunakan akun Google Anda sebelum menulis atau membalas tanggapan.',
-    en: 'To maintain discussion ethics and prevent spam, please sign in with your Google account before commenting.',
-    ar: 'للحفاظ على آداب الحوار ومنع الرسائل المزعجة، يرجى تسجيل الدخول بحساب Google قبل التعليق.',
-    fa: 'برای حفظ ادب گفتگو و جلوگیری از هرزنامه، لطفاً پیش از ارسال نظر با حساب گوگل خود وارد شوید.'
-  },
-  login_with_google_to_comment: {
-    id: 'Masuk dengan Google untuk Berkomentar',
-    en: 'Sign in with Google to Comment',
-    ar: 'تسجيل الدخول عبر Google للتعليق',
-    fa: 'ورود با گوگل برای ثبت نظر'
-  },
-  reply: {
-    id: 'Balas',
-    en: 'Reply',
-    ar: 'رد',
-    fa: 'پاسخ'
-  },
-  original_author_badge: {
-    id: 'Penulis Asli',
-    en: 'Original Author',
-    ar: 'الكاتب الأصلي',
-    fa: 'نویسنده اصلی'
-  },
-  verified_google: {
-    id: 'Terverifikasi Akun Google',
-    en: 'Verified Google Account',
-    ar: 'تم التحقق عبر Google',
-    fa: 'تأیید شده با حساب گوگل'
-  },
-  replying_to: {
-    id: 'Membalas tanggapan dari',
-    en: 'Replying to',
-    ar: 'الرد على تعليق',
-    fa: 'پاسخ به دیدگاه'
-  },
-  close: {
-    id: 'Tutup',
-    en: 'Close',
-    ar: 'إغلاق',
-    fa: 'بستن'
-  },
-  write_reply_placeholder: {
-    id: 'Tulis balasan Anda...',
-    en: 'Write your reply...',
-    ar: 'اكتب ردك هنا...',
-    fa: 'پاسخ خود را بنویسید...'
-  },
-  send_reply: {
-    id: 'Kirim Balasan',
-    en: 'Send Reply',
-    ar: 'إرسال الرد',
-    fa: 'ارسال پاسخ'
-  },
-  send_comment: {
-    id: 'Kirim Tanggapan',
-    en: 'Submit Response',
-    ar: 'إرسال التعليق',
-    fa: 'ارسال دیدگاه'
-  },
-  write_comment_placeholder: {
-    id: 'Tuliskan pandangan atau tanggapan ilmiah Anda...',
-    en: 'Write your scholarly perspective or comment...',
-    ar: 'اكتب وجهة نظرك أو تعقيبك العلمي...',
-    fa: 'دیدگاه یا تحلیل علمی خود را بنویسید...'
-  },
-  no_comments_yet: {
-    id: 'Belum ada tanggapan untuk artikel ini. Jadilah yang pertama memulai diskusi.',
-    en: 'No responses yet for this article. Be the first to start the discussion.',
-    ar: 'لا توجد تعليقات بعد على هذا المقال. كن أول من يبدأ النقاش.',
-    fa: 'هنوز دیدگاهی برای این مقاله ثبت نشده است. اولین نفری باشید که گفتگو را آغاز می‌کند.'
-  },
-  back_to_archive: {
-    id: '← Kembali ke Semua Arsip',
-    en: '← Back to All Articles',
-    ar: '← العودة إلى جميع الأرشيفات',
-    fa: '← بازگشت به تمامی آرشیوها'
-  },
-  back_to_top: {
-    id: 'Kembali ke Atas ↑',
-    en: 'Back to Top ↑',
-    ar: 'العودة إلى الأعلى ↑',
-    fa: 'بازگشت به بالا ↑'
-  },
-  logout: {
-    id: 'Keluar',
-    en: 'Sign Out',
-    ar: 'تسجيل الخروج',
-    fa: 'خروج'
-  },
-  write_comment: {
-    id: 'Tulis Tanggapan Anda',
-    en: 'Leave a Comment',
-    ar: 'أضف تعليقك',
-    fa: 'دیدگاه خود را ارسال کنید'
+    fa: 'مرتب‌سازی:'
   },
   sort_relevant: {
     id: 'Paling Relevan',
@@ -336,67 +216,115 @@ const UI_DICTIONARY = {
     ar: 'الأقدم',
     fa: 'قدیمی‌ترین'
   },
-  ai_translation_badge: {
-    id: 'Diterjemahkan secara akademis oleh Ollama AI (Gemma 4:31B)',
-    en: 'Scholarly translated by Ollama AI (Gemma 4:31B)',
-    ar: 'ترجمة أكاديمية بواسطة Ollama AI (Gemma 4:31B)',
-    fa: 'ترجمه آکادمیک توسط Ollama AI (Gemma 4:31B)'
+  login_to_comment: {
+    id: 'Ingin berdiskusi atau menyampaikan tanggapan?',
+    en: 'Want to join the discussion or share your response?',
+    ar: 'هل ترغب في المشاركة في النقاش أو تقديم تعليق؟',
+    fa: 'مایل به مشارکت در بحث یا ارسال دیدگاه هستید؟'
   },
-  view_original: {
-    id: 'Baca Naskah Asli (Indonesia) ↗',
-    en: 'Read Original (Indonesian) ↗',
-    ar: 'قراءة النص الأصلي (الإندونيسية) ↗',
-    fa: 'مشاهده متن اصلی (اندونزیایی) ↗'
+  login_to_comment_desc: {
+    id: 'Masuk dengan Akun Google Anda untuk menyampaikan catatan kritis atau pertanyaan ilmiah.',
+    en: 'Sign in with your Google account to share your constructive feedback or academic inquiries.',
+    ar: 'سجل الدخول باستخدام حساب جوجل للمشاركة بملاحظاتك العلمية أو استفساراتك.',
+    fa: 'برای ارسال نظرات تحلیلی یا پرسش‌های علمی خود با حساب گوگل وارد شوید.'
   },
-  no_articles_found: {
-    id: 'Tidak ditemukan tulisan yang cocok.',
-    en: 'No matching articles found.',
-    ar: 'لم يتم العثور على مقالات مطابقة.',
-    fa: 'هیچ مقاله‌ای یافت نشد.'
+  login_with_google: {
+    id: 'Masuk dengan Google',
+    en: 'Sign in with Google',
+    ar: 'تسجيل الدخول باستخدام جوجل',
+    fa: 'ورود با حساب گوگل'
   },
-  filter_clear: {
-    id: 'Hapus Filter',
-    en: 'Clear Filter',
-    ar: 'إزالة التصفية',
-    fa: 'حذف فیلتر'
+  write_comment_placeholder: {
+    id: 'Tulis tanggapan atau catatan kritis Anda di sini secara santun...',
+    en: 'Write your scholarly response or constructive inquiry respectfully...',
+    ar: 'اكتب تعليقك أو ملاحظاتك النقدية هنا بأسلوب علمي رصين...',
+    fa: 'دیدگاه یا یادداشت تحلیلی خود را با بیانی محترمانه بنویسید...'
   },
-  ai_translated_notice: {
-    id: 'Diterjemahkan secara akademis oleh',
-    en: 'Scholarly translated by',
-    ar: 'ترجمة أكاديمية بواسطة',
-    fa: 'ترجمه تخصصی توسط'
+  send_comment: {
+    id: 'Kirim Tanggapan',
+    en: 'Submit Response',
+    ar: 'إرسال التعليق',
+    fa: 'ارسال دیدگاه'
   },
-  to_language: {
-    id: 'ke bahasa',
-    en: 'into',
-    ar: 'إلى اللغة',
-    fa: 'به زبان'
+  reply_to: {
+    id: 'Balas tanggapan',
+    en: 'Reply to',
+    ar: 'الرد على',
+    fa: 'پاسخ به'
   },
-  read_original_id: {
-    id: 'Baca Naskah Asli (Indonesia) ↗',
-    en: 'Read Original (Indonesian) ↗',
-    ar: 'قراءة النص الأصلي (الإندونيسية) ↗',
-    fa: 'خواندن متن اصلی (اندونزیایی) ↗'
+  reply: {
+    id: 'Balas',
+    en: 'Reply',
+    ar: 'رد',
+    fa: 'پاسخ'
   },
-  no_articles_yet: {
-    id: 'Belum ada tulisan yang dipublikasikan.',
-    en: 'No articles published yet.',
-    ar: 'لم يتم نشر أي مقالات بعد.',
-    fa: 'هنوز مقاله‌ای منتشر نشده است.'
+  cancel: {
+    id: 'Batal',
+    en: 'Cancel',
+    ar: 'إلغاء',
+    fa: 'انصراف'
   },
-  default_location: {
-    id: 'Jakarta, Indonesia',
-    en: 'Jakarta, Indonesia',
-    ar: 'جاكرتا، إندونيسيا',
-    fa: 'جاکارتا، اندونزی'
+  author_badge: {
+    id: 'Penulis',
+    en: 'Author',
+    ar: 'الكاتب',
+    fa: 'نویسنده'
   },
   author_profile_tag: {
     id: 'Profil Penulis',
     en: 'Author Profile',
     ar: 'الملف التعريفي للكاتب',
-    fa: 'شناسنامه نویسنده'
+    fa: 'مشخصات نویسنده'
   },
-  official_contact: {
+  reading_label: {
+    id: 'Baca',
+    en: 'Read',
+    ar: 'قراءة',
+    fa: 'مطالعه'
+  },
+  filter_all: {
+    id: 'Semua',
+    en: 'All',
+    ar: 'الكل',
+    fa: 'همه'
+  },
+  no_articles_found: {
+    id: 'Belum ada tulisan dalam kategori atau pencarian ini.',
+    en: 'No articles found in this category or search.',
+    ar: 'لم يتم العثور على مقالات في هذا القسم أو البحث.',
+    fa: 'مقاله‌ای در این دسته‌بندی یا جستجو یافت نشد.'
+  },
+  no_articles_yet: {
+    id: 'Belum ada artikel yang dipublikasikan.',
+    en: 'No published articles yet.',
+    ar: 'لا توجد مقالات منشورة حتى الآن.',
+    fa: 'هنوز مقاله‌ای منتشر نشده است.'
+  },
+  filter_clear: {
+    id: 'Lihat Seluruh Tulisan',
+    en: 'View All Articles',
+    ar: 'عرض جميع المقالات',
+    fa: 'مشاهده همه مقالات'
+  },
+  ai_translation_notice: {
+    id: 'Halaman ini diterjemahkan secara dinamis menggunakan model AI Gemma 4.',
+    en: 'This page is dynamically translated using the Gemma 4 AI model.',
+    ar: 'تمت ترجمة هذه الصفحة ديناميكيًا باستخدام نموذج الذكاء الاصطناعي Gemma 4.',
+    fa: 'این صفحه به صورت پویا با استفاده از مدل هوش مصنوعی Gemma 4 ترجمه شده است.'
+  },
+  footer_about_heading: {
+    id: 'Tentang Penulis',
+    en: 'About the Author',
+    ar: 'عن الكاتب',
+    fa: 'درباره نویسنده'
+  },
+  footer_nav_heading: {
+    id: 'Navigasi',
+    en: 'Navigation',
+    ar: 'روابط سريعة',
+    fa: 'دسترسی سریع'
+  },
+  footer_contact_heading: {
     id: 'Kontak Resmi',
     en: 'Official Contact',
     ar: 'الاتصال الرسمي',
@@ -456,7 +384,6 @@ function splitHtmlIntoSections(html, maxChunkSize = 2500) {
   }
 
   const sections = [];
-  // Split on block-level tags like <h2>, <h3>, <h4>, <hr>, or double <p>
   const parts = html.split(/(?=<h[2-4][^>]*>|<hr[^>]*>)/i);
 
   let currentChunk = '';
@@ -476,6 +403,123 @@ function splitHtmlIntoSections(html, maxChunkSize = 2500) {
   return sections.length > 0 ? sections : [html];
 }
 
+const CONTEXTUAL_TRANSLATION_GUIDELINES = `
+CRITICAL CONTEXTUAL TRANSLATION GUIDELINES:
+1. Translate contextually, naturally, and grammatically according to the scholarly standards of the target language.
+2. Contextually localize institutional, cultural, and Islamic religious concepts within the flow of the sentence:
+   - Indonesian "Pesantren" / "Pondok Pesantren": Localize naturally according to context (e.g. in Arabic as "المعاهد الإسلامية" / "الحوزة العلمية" / "المعاهد الدينية"; in Persian as "حوزه‌های علمیه" / "مدارس علوم دینی"; in English as "Islamic Seminary" / "Islamic Boarding School"). NEVER leave it in untranslated Latin or as an awkward transliteration.
+   - Indonesian "Santri": Localize as religious/seminary students (Arabic: "طلاب العلوم الدينية" / "طلاب المعهد"; Persian: "طلاب" / "دانش‌پژوهان"; English: "seminary students").
+   - Indonesian "Kyai" / "Kiai": Localize as religious scholar/teacher/director (Arabic: "الشيخ" / "عالم الدين" / "الأستاذ"; Persian: "عالم دینی" / "استاد"; English: "Islamic scholar").
+   - Indonesian "Pendidikan Pesantren": Localize as Islamic seminary education (Arabic: "التعليم الديني في المعاهد" / "التربية الحوزوية"; Persian: "آموزش حوزوی"; English: "Islamic Seminary Education").
+3. Maintain appropriate grammatical agreement, cases, and natural syntax in the target language.
+`;
+
+/**
+ * Translates dynamic site and author profile settings (from .env / database)
+ * into target language using Ollama with SHA-256 content hash cache.
+ */
+async function getOrTranslateSiteProfile(targetLang) {
+  const currentLang = (targetLang || 'id').toLowerCase();
+  const rawProfile = {
+    siteName: process.env.SITE_NAME || 'Akbar Saleh',
+    siteTagline: process.env.SITE_TAGLINE || 'Kajian & Pemikiran Keislaman',
+    authorRole: process.env.AUTHOR_ROLE || 'Kyai & Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta',
+    authorBio: process.env.AUTHOR_BIO || 'Kyai dan Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta. Menulis seputar studi keislaman, riset keilmuan, dan analisis sosial keagamaan.',
+    authorLocation: process.env.AUTHOR_LOCATION || 'Jakarta, Indonesia'
+  };
+
+  if (currentLang === 'id' || !SUPPORTED_LANGUAGES[currentLang]) {
+    return rawProfile;
+  }
+
+  const sourceHash = computeContentHash(rawProfile);
+  const cached = getPageTranslation('site_profile', currentLang, sourceHash);
+
+  if (cached && cached.content) {
+    try {
+      const parsed = JSON.parse(cached.content);
+      return {
+        siteName: rawProfile.siteName,
+        siteTagline: parsed.site_tagline || rawProfile.siteTagline,
+        authorRole: parsed.author_role || rawProfile.authorRole,
+        authorBio: parsed.author_bio || rawProfile.authorBio,
+        authorLocation: parsed.author_location || rawProfile.authorLocation
+      };
+    } catch (_) {}
+  }
+
+  // Translate dynamically on-demand via Ollama
+  const langConfig = SUPPORTED_LANGUAGES[currentLang];
+  const systemPrompt = `You are a distinguished academic translator specializing in Islamic studies, theology, and philosophy.
+Your task is to translate dynamic author profile and website metadata from Indonesian into ${langConfig.promptTarget}.
+
+${CONTEXTUAL_TRANSLATION_GUIDELINES}
+
+Output MUST BE strictly a valid JSON object with the following keys:
+- "site_tagline": (string) Translated site tagline
+- "author_role": (string) Translated author role and institution
+- "author_bio": (string) Translated short biography
+- "author_location": (string) Translated location/city`;
+
+  const userPrompt = `Translate the following site profile metadata from Indonesian to ${langConfig.name}:
+Tagline: ${rawProfile.siteTagline}
+Author Role: ${rawProfile.authorRole}
+Author Bio: ${rawProfile.authorBio}
+Location: ${rawProfile.authorLocation}`;
+
+  const payload = {
+    model: OLLAMA_MODEL,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ],
+    stream: false,
+    format: 'json',
+    options: { temperature: 0.2 }
+  };
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT);
+
+  try {
+    const response = await fetch(`${OLLAMA_HOST}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Ollama HTTP Error ${response.status}`);
+    }
+
+    const data = await response.json();
+    const parsed = extractJsonFromLlmResponse(data.message.content);
+
+    if (parsed) {
+      savePageTranslation('site_profile', currentLang, {
+        title: parsed.site_tagline || rawProfile.siteTagline,
+        subtitle: parsed.author_role || rawProfile.authorRole,
+        content: JSON.stringify(parsed)
+      }, sourceHash);
+
+      return {
+        siteName: rawProfile.siteName,
+        siteTagline: parsed.site_tagline || rawProfile.siteTagline,
+        authorRole: parsed.author_role || rawProfile.authorRole,
+        authorBio: parsed.author_bio || rawProfile.authorBio,
+        authorLocation: parsed.author_location || rawProfile.authorLocation
+      };
+    }
+  } catch (err) {
+    clearTimeout(timeoutId);
+    console.warn(`[Ollama Site Profile Translate Failed for '${currentLang}']:`, err.message);
+  }
+
+  return rawProfile;
+}
+
 /**
  * Translates a single section/chunk of HTML content
  */
@@ -486,7 +530,8 @@ Your task is to translate an Indonesian Islamic scholarly text segment into ${la
 CRITICAL RULES:
 1. Preserve ALL HTML tags, attributes, formatting, headings, lists, blockquotes, and link anchors EXACTLY as structured.
 2. Translate ONLY the human-readable text inside the HTML elements.
-3. Output MUST BE strictly a valid JSON object with EXACTLY the following key:
+3. ${CONTEXTUAL_TRANSLATION_GUIDELINES}
+4. Output MUST BE strictly a valid JSON object with EXACTLY the following key:
    - "translated_html": (string) Translated HTML content for this segment
 Do NOT include any commentary, notes, or text outside the JSON object.`;
 
@@ -551,6 +596,7 @@ async function translatePostToLanguage(post, targetLang) {
 
   // 1. Translate Title, Meta Description & Category
   const headerPrompt = `You are an academic translator. Translate the metadata of an Islamic scholarly article from Indonesian to ${langConfig.promptTarget}.
+${CONTEXTUAL_TRANSLATION_GUIDELINES}
 Output strictly a valid JSON object with:
 - "title": (string) Translated title
 - "meta_description": (string) Translated meta description summary
@@ -648,6 +694,7 @@ async function translatePageToLanguage(pageSlug, pageData, targetLang) {
 
   const systemPrompt = `You are an academic translator. Translate this website page content from Indonesian into ${langConfig.promptTarget}.
 Preserve all HTML formatting tags (<p>, <strong>, <em>, <a>, <ul>, <li>).
+${CONTEXTUAL_TRANSLATION_GUIDELINES}
 Output strictly a valid JSON object with:
 - "title": (string) Translated page title
 - "subtitle": (string) Translated page subtitle
@@ -697,9 +744,9 @@ ${pageData.content || ''}`;
     });
 
     const result = {
-      title: parsed.title || pageData.title,
-      subtitle: parsed.subtitle || pageData.subtitle,
-      content: parsed.content || pageData.content,
+      title: (parsed.title || pageData.title).trim(),
+      subtitle: (parsed.subtitle || pageData.subtitle || '').trim(),
+      content: (parsed.content || pageData.content).trim(),
       lang_code: targetLang,
       source_hash: sourceHash
     };
@@ -708,6 +755,7 @@ ${pageData.content || ''}`;
     return result;
   } catch (err) {
     clearTimeout(timeoutId);
+    console.error(`[Ollama Translator] Failed to translate page ${pageSlug} to ${targetLang}:`, err.message);
     throw err;
   }
 }
@@ -738,7 +786,9 @@ module.exports = {
   UI_DICTIONARY,
   t,
   splitHtmlIntoSections,
+  getOrTranslateSiteProfile,
   translatePostToLanguage,
   translatePageToLanguage,
-  translatePostAllLanguages
+  translatePostAllLanguages,
+  computeContentHash
 };
