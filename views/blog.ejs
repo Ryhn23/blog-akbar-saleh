@@ -13,7 +13,7 @@
                 <%= t('nav_blog') %>
             </h1>
             <p class="text-sm text-gray-500 mb-6">
-                <%= t('hero_default_content') %>
+                <%= siteTagline %>
             </p>
 
             <form action="/blog" method="GET" class="relative max-w-lg">
@@ -47,10 +47,10 @@
                 </a>
                 <% categories.forEach(cat => { %>
                     <a 
-                        href="/blog?category=<%= encodeURIComponent(cat.category) %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '&lang=' + currentLang : '' %><%= searchQuery ? '&q=' + encodeURIComponent(searchQuery) : '' %>" 
-                        class="px-3 py-1 rounded-md text-xs font-medium transition <%= selectedCategory === cat.category ? 'bg-emerald-800 text-white font-semibold' : 'bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-800' %>"
+                        href="/blog?category=<%= encodeURIComponent(cat.rawCategory) %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '&lang=' + currentLang : '' %><%= searchQuery ? '&q=' + encodeURIComponent(searchQuery) : '' %>" 
+                        class="px-3 py-1 rounded-md text-xs font-medium transition <%= selectedCategory === cat.rawCategory ? 'bg-emerald-800 text-white font-semibold' : 'bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-800' %>"
                     >
-                        <%= cat.category %> (<%= cat.count %>)
+                        <%= cat.localizedName %> (<%= cat.count %>)
                     </a>
                 <% }) %>
             </div>
@@ -60,11 +60,15 @@
         <% if (searchQuery || selectedCategory) { %>
             <div class="flex items-center justify-between bg-emerald-50 border border-emerald-100 text-emerald-900 px-4 py-2.5 rounded-lg mb-8 text-xs">
                 <span>
-                    Menampilkan hasil untuk 
-                    <% if (selectedCategory) { %>kategori <strong>"<%= selectedCategory %>"</strong><% } %>
-                    <% if (selectedCategory && searchQuery) { %> dan <% } %>
-                    <% if (searchQuery) { %>pencarian <strong>"<%= searchQuery %>"</strong><% } %>
-                    (<%= posts.length %> artikel)
+                    <%= t('filter_showing_results') %> 
+                    <% if (selectedCategory) { %>
+                        <%= t('filter_category') %> <strong>"<%= (typeof selectedCategoryLocalized !== 'undefined' && selectedCategoryLocalized) ? selectedCategoryLocalized : selectedCategory %>"</strong>
+                    <% } %>
+                    <% if (selectedCategory && searchQuery) { %> <%= t('and') %> <% } %>
+                    <% if (searchQuery) { %>
+                        <%= t('filter_search') %> <strong>"<%= searchQuery %>"</strong>
+                    <% } %>
+                    (<%= posts.length %> <%= t('articles_count') %>)
                 </span>
                 <a href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="font-bold text-emerald-800 hover:underline"><%= t('filter_clear') %></a>
             </div>

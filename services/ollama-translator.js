@@ -1,4 +1,4 @@
-const { calculateReadingTime, computeContentHash, savePostTranslation, savePageTranslation, getPageTranslation } = require('../db');
+const { calculateReadingTime, computeContentHash, savePostTranslation, savePageTranslation, getPageTranslation, getPostTranslation } = require('../db');
 
 const OLLAMA_HOST = (process.env.OLLAMA_HOST || 'https://ai.khatamunnabiyyin.net').replace(/\/+$/, '');
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma4:31b-cloud';
@@ -288,6 +288,36 @@ const UI_DICTIONARY = {
     ar: 'الكل',
     fa: 'همه'
   },
+  filter_showing_results: {
+    id: 'Menampilkan hasil untuk',
+    en: 'Showing results for',
+    ar: 'عرض النتائج لـ',
+    fa: 'نمایش نتایج برای'
+  },
+  filter_category: {
+    id: 'kategori',
+    en: 'category',
+    ar: 'قسم',
+    fa: 'دسته‌بندی'
+  },
+  filter_search: {
+    id: 'pencarian',
+    en: 'search',
+    ar: 'بحث',
+    fa: 'جستجو'
+  },
+  and: {
+    id: 'dan',
+    en: 'and',
+    ar: 'و',
+    fa: 'و'
+  },
+  articles_count: {
+    id: 'tulisan',
+    en: 'articles',
+    ar: 'مقالات',
+    fa: 'مقاله'
+  },
   no_articles_found: {
     id: 'Belum ada tulisan dalam kategori atau pencarian ini.',
     en: 'No articles found in this category or search.',
@@ -306,11 +336,77 @@ const UI_DICTIONARY = {
     ar: 'عرض جميع المقالات',
     fa: 'مشاهده همه مقالات'
   },
-  ai_translation_notice: {
-    id: 'Halaman ini diterjemahkan secara dinamis menggunakan model AI Gemma 4.',
-    en: 'This page is dynamically translated using the Gemma 4 AI model.',
-    ar: 'تمت ترجمة هذه الصفحة ديناميكيًا باستخدام نموذج الذكاء الاصطناعي Gemma 4.',
-    fa: 'این صفحه به صورت پویا با استفاده از مدل هوش مصنوعی Gemma 4 ترجمه شده است.'
+  ai_translation_badge: {
+    id: 'Halaman ini diterjemahkan secara otomatis oleh Ollama AI (Gemma 4:31B).',
+    en: 'This page is dynamically translated by Ollama AI (Gemma 4:31B).',
+    ar: 'تمت ترجمة هذه الصفحة آليًا بواسطة نموذج Ollama AI (Gemma 4:31B).',
+    fa: 'این صفحه به صورت خودکار توسط هوش مصنوعی Ollama (Gemma 4:31B) ترجمه شده است.'
+  },
+  view_original: {
+    id: 'Lihat Versi Asli (Bahasa Indonesia)',
+    en: 'View Original (Indonesian)',
+    ar: 'عرض النسخة الأصلية (الإندونيسية)',
+    fa: 'مشاهده نسخه اصلی (اندونزیایی)'
+  },
+  official_contact: {
+    id: 'Kontak Resmi',
+    en: 'Official Contact',
+    ar: 'الاتصال الرسمي',
+    fa: 'ارتباط رسمی'
+  },
+  default_location: {
+    id: 'Jakarta, Indonesia',
+    en: 'Jakarta, Indonesia',
+    ar: 'جاكرتا، إندونيسيا',
+    fa: 'جاکارتا، اندونزی'
+  },
+  ai_modal_title: {
+    id: 'Menerjemahkan Konten Ilmiah...',
+    en: 'Translating Scholarly Content...',
+    ar: 'جارٍ ترجمة المحتوى العلمي...',
+    fa: 'در حال ترجمه محتوای علمی...'
+  },
+  ai_modal_sub: {
+    id: 'Menghubungkan ke server Ollama AI untuk menerjemahkan naskah dan istilah keislaman secara akurat.',
+    en: 'Connecting to Ollama AI server to accurately translate scholarly texts and Islamic terminology.',
+    ar: 'جارٍ الاتصال بخادم Ollama AI لترجمة النصوص والمصطلحات الإسلامية بدقة وسلاسة.',
+    fa: 'اتصال به سرور هوش مصنوعی Ollama برای ترجمه دقیق متون و اصطلاحات اسلامی.'
+  },
+  ai_step_1: {
+    id: 'Menganalisis & membagi segmen teks...',
+    en: 'Analyzing & chunking text segments...',
+    ar: 'تحليل وتقسيم مقاطع النص...',
+    fa: 'تحلیل و بخش‌بندی بندهای متن...'
+  },
+  ai_step_2: {
+    id: 'Menerjemahkan via Ollama LLM...',
+    en: 'Translating via Ollama LLM...',
+    ar: 'الترجمة عبر نموذج Ollama الذكي...',
+    fa: 'ترجمه از طریق هوش مصنوعی Ollama...'
+  },
+  ai_step_3: {
+    id: 'Memformat tata letak & menyimpan...',
+    en: 'Formatting layout & caching...',
+    ar: 'تنسيق الصفحة وحفظ الترجمة...',
+    fa: 'قالب‌بندی چیدمان و ذخیره‌سازی...'
+  },
+  page_not_found: {
+    id: 'Halaman Tidak Ditemukan',
+    en: 'Page Not Found',
+    ar: 'الصفحة غير موجودة',
+    fa: 'صفحه یافت نشد'
+  },
+  page_not_found_desc: {
+    id: 'Halaman atau artikel yang Anda cari tidak tersedia atau telah dipindahkan.',
+    en: 'The page or article you are looking for is not available or has been moved.',
+    ar: 'الصفحة أو المقالة التي تبحث عنها غير متوفرة أو تم نقلها.',
+    fa: 'صفحه یا مقاله‌ای که به دنبال آن هستید موجود نیست یا منتقل شده است.'
+  },
+  back_to_home: {
+    id: 'Kembali ke Beranda',
+    en: 'Back to Home',
+    ar: 'العودة إلى الرئيسية',
+    fa: 'بازگشت به صفحه نخست'
   },
   footer_about_heading: {
     id: 'Tentang Penulis',
@@ -424,7 +520,7 @@ async function getOrTranslateSiteProfile(targetLang) {
     siteName: process.env.SITE_NAME || 'Akbar Saleh',
     siteTagline: process.env.SITE_TAGLINE || 'Kajian & Pemikiran Keislaman',
     authorRole: process.env.AUTHOR_ROLE || 'Kyai & Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta',
-    authorBio: process.env.AUTHOR_BIO || 'Kyai dan Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta. Menulis seputar studi keislaman, riset keilmuan, dan analisis sosial keagamaan.',
+    authorBio: process.env.AUTHOR_BIO || 'Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta. Menulis seputar studi keislaman, riset keilmuan, dan analisis sosial keagamaan.',
     authorLocation: process.env.AUTHOR_LOCATION || 'Jakarta, Indonesia'
   };
 
@@ -518,6 +614,91 @@ Location: ${rawProfile.authorLocation}`;
   }
 
   return rawProfile;
+}
+
+/**
+ * Translates an array of category items dynamically via Ollama with smart caching
+ */
+async function getOrTranslateCategories(rawCategories, targetLang) {
+  const currentLang = (targetLang || 'id').toLowerCase();
+  if (currentLang === 'id' || !SUPPORTED_LANGUAGES[currentLang] || !rawCategories || rawCategories.length === 0) {
+    return rawCategories.map(c => ({
+      rawCategory: typeof c === 'string' ? c : c.category,
+      localizedName: typeof c === 'string' ? c : c.category,
+      count: c.count || 0
+    }));
+  }
+
+  const catNames = rawCategories.map(c => typeof c === 'string' ? c : c.category);
+  const sourceHash = computeContentHash(catNames);
+  const cached = getPageTranslation('categories_list', currentLang, sourceHash);
+
+  let dict = {};
+  if (cached && cached.content) {
+    try {
+      dict = JSON.parse(cached.content);
+    } catch (_) {}
+  }
+
+  if (!dict || Object.keys(dict).length === 0) {
+    const langConfig = SUPPORTED_LANGUAGES[currentLang];
+    const systemPrompt = `You are an expert Islamic academic translator. Translate category names of an Islamic scholarly blog from Indonesian into ${langConfig.promptTarget}.
+${CONTEXTUAL_TRANSLATION_GUIDELINES}
+Output strictly a valid JSON object mapping each original Indonesian category name to its translated name:
+{"Original Indonesian Name": "Translated Name"}`;
+
+    const userPrompt = `Categories to translate:
+${JSON.stringify(catNames)}`;
+
+    const payload = {
+      model: OLLAMA_MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      stream: false,
+      format: 'json',
+      options: { temperature: 0.1 }
+    };
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT);
+
+    try {
+      const response = await fetch(`${OLLAMA_HOST}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const data = await response.json();
+        const parsed = extractJsonFromLlmResponse(data.message.content);
+        if (parsed) {
+          dict = parsed;
+          savePageTranslation('categories_list', currentLang, {
+            title: 'Categories',
+            subtitle: '',
+            content: JSON.stringify(parsed)
+          }, sourceHash);
+        }
+      }
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.warn(`[Ollama Categories Translate Failed for '${currentLang}']:`, err.message);
+    }
+  }
+
+  return rawCategories.map(c => {
+    const raw = typeof c === 'string' ? c : c.category;
+    return {
+      rawCategory: raw,
+      localizedName: dict[raw] || raw,
+      count: c.count || 0
+    };
+  });
 }
 
 /**
@@ -684,6 +865,46 @@ Meta Description: ${post.meta_description || ''}`;
 }
 
 /**
+ * Ensures a single post is localized, automatically translating on-demand if not in cache
+ */
+async function localizePostAsync(post, targetLang) {
+  if (!post || targetLang === 'id' || !SUPPORTED_LANGUAGES[targetLang]) return post;
+
+  const sourceHash = computeContentHash({
+    title: post.title,
+    meta: post.meta_description || '',
+    content: post.content,
+    cat: post.category || ''
+  });
+
+  const cached = getPostTranslation(post.id, targetLang, sourceHash);
+  if (cached && cached.title) {
+    return {
+      ...post,
+      title: cached.title,
+      meta_description: cached.meta_description || post.meta_description,
+      category: cached.category || post.category,
+      reading_time: cached.reading_time || post.reading_time
+    };
+  }
+
+  // Translate on-demand and save into database
+  try {
+    const trans = await translatePostToLanguage(post, targetLang);
+    return {
+      ...post,
+      title: trans.title,
+      meta_description: trans.meta_description || post.meta_description,
+      category: trans.category || post.category,
+      reading_time: trans.reading_time || post.reading_time
+    };
+  } catch (err) {
+    console.error(`[localizePostAsync] Translation failed for post #${post.id}:`, err.message);
+    return post;
+  }
+}
+
+/**
  * Translates a standalone page (e.g. About page, Hero section)
  */
 async function translatePageToLanguage(pageSlug, pageData, targetLang) {
@@ -787,6 +1008,8 @@ module.exports = {
   t,
   splitHtmlIntoSections,
   getOrTranslateSiteProfile,
+  getOrTranslateCategories,
+  localizePostAsync,
   translatePostToLanguage,
   translatePageToLanguage,
   translatePostAllLanguages,

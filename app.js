@@ -34,6 +34,8 @@ const {
   SUPPORTED_LANGUAGES, 
   t, 
   getOrTranslateSiteProfile,
+  getOrTranslateCategories,
+  localizePostAsync,
   translatePostToLanguage, 
   translatePageToLanguage, 
   translatePostAllLanguages 
@@ -394,11 +396,14 @@ app.get('/', async (req, res) => {
 
   const rawFeaturedPosts = getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 AND is_featured = 1 ORDER BY created_at DESC LIMIT 2');
   const rawRecentPosts = getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 ORDER BY created_at DESC LIMIT 6');
-  const categories = getAll('SELECT category, COUNT(*) as count FROM posts WHERE is_published = 1 AND is_hidden = 0 GROUP BY category ORDER BY count DESC');
+  const rawCategories = getAll('SELECT category, COUNT(*) as count FROM posts WHERE is_published = 1 AND is_hidden = 0 GROUP BY category ORDER BY count DESC');
   const totalPosts = getOne('SELECT COUNT(*) as total FROM posts WHERE is_published = 1 AND is_hidden = 0')?.total || 0;
 
-  const featuredPosts = rawFeaturedPosts.map(p => localizePost(p, targetLang));
-  const recentPosts = rawRecentPosts.map(p => localizePost(p, targetLang));
+  const [featuredPosts, recentPosts, categories] = await Promise.all([
+    Promise.all(rawFeaturedPosts.map(p => localizePostAsync(p, targetLang))),
+    Promise.all(rawRecentPosts.map(p => localizePostAsync(p, targetLang))),
+    getOrTranslateCategories(rawCategories, targetLang)
+  ]);
 
   const homeHero = getOne('SELECT * FROM pages WHERE slug = ?', ['home']);
   let heroBadge = 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
@@ -471,7 +476,7 @@ app.get('/', async (req, res) => {
 });
 
 // Blog List (Full Multi-Language Support with search & category filter)
-app.get('/blog', (req, res) => {
+app.get('/blog', async (req, res) => {
   const baseUrl = process.env.APP_URL || `http://localhost:${PORT}`;
   const authorName = process.env.AUTHOR_NAME || 'Akbar Saleh, B.A.';
   const authorRole = process.env.AUTHOR_ROLE || 'Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta';
@@ -494,10 +499,17 @@ app.get('/blog', (req, res) => {
   sql += ' ORDER BY created_at DESC';
 
   const rawPosts = getAll(sql, params);
-  const posts = rawPosts.map(p => localizePost(p, targetLang));
-  const categories = getAll('SELECT category, COUNT(*) as count FROM posts WHERE is_published = 1 AND is_hidden = 0 GROUP BY category ORDER BY count DESC');
+  const rawCategories = getAll('SELECT category, COUNT(*) as count FROM posts WHERE is_published = 1 AND is_hidden = 0 GROUP BY category ORDER BY count DESC');
 
-  const pageTitle = category ? `Kajian ${category}` : (q ? `Hasil Pencarian: "${q}"` : t('nav_blog', targetLang));
+  const [posts, categories] = await Promise.all([
+    Promise.all(rawPosts.map(p => localizePostAsync(p, targetLang))),
+    getOrTranslateCategories(rawCategories, targetLang)
+  ]);
+
+  const selectedCatObj = categories.find(c => c.rawCategory === category);
+  const selectedCategoryLocalized = selectedCatObj ? selectedCatObj.localizedName : (category || '');
+
+  const pageTitle = category ? (selectedCategoryLocalized ? `${t('filter_category')} ${selectedCategoryLocalized}` : `Kajian ${category}`) : (q ? `${t('filter_search')}: "${q}"` : t('nav_blog', targetLang));
   const canonicalUrl = category ? `${baseUrl}/blog?category=${encodeURIComponent(category)}` : `${baseUrl}/blog`;
 
   const schemaJsonLd = {
@@ -530,6 +542,7 @@ app.get('/blog', (req, res) => {
     posts,
     categories,
     selectedCategory: category || '',
+    selectedCategoryLocalized,
     searchQuery: q || '',
     canonicalUrl,
     schemaJsonLd
@@ -950,8 +963,12 @@ app.get('/blog/:slug', async (req, res) => {
     canonicalUrl: postUrl,
     schemaJsonLd,
     isAdminPreview: isUnpublishedOrHidden && isAdmin,
-    previewReason,
-    relatedPosts: (relatedPosts.length > 0 ? relatedPosts : getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 AND id != ? ORDER BY created_at DESC LIMIT 3', [post.id])).map(p => localizePost(p, targetLang))
+    relatedPosts: await Promise.all(
+      (relatedPosts.length > 0 
+        ? relatedPosts 
+        : getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 AND id != ? ORDER BY created_at DESC LIMIT 3', [post.id])
+      ).map(p => localizePostAsync(p, targetLang))
+    )
   });
 });
 

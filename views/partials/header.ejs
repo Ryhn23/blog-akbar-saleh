@@ -165,25 +165,25 @@
                 </div>
 
                 <h3 class="text-base sm:text-lg font-serif font-bold text-gray-900 mb-1" id="ai-translate-title">
-                    Menerjemahkan Konten Ilmiah...
+                    <%= typeof t !== 'undefined' ? t('ai_modal_title') : 'Menerjemahkan Konten Ilmiah...' %>
                 </h3>
                 <p class="text-xs text-gray-500 mb-5 leading-relaxed" id="ai-translate-sub">
-                    Menghubungkan ke server Ollama AI untuk menerjemahkan naskah dan istilah keislaman secara akurat.
+                    <%= typeof t !== 'undefined' ? t('ai_modal_sub') : 'Menghubungkan ke server Ollama AI untuk menerjemahkan naskah dan istilah keislaman secara akurat.' %>
                 </p>
 
                 <!-- Step Progress Sequence Indicator -->
                 <div class="space-y-2 text-left text-xs bg-gray-50 p-3.5 rounded-xl border border-gray-100 mb-5 font-mono" id="ai-translate-steps">
                     <div class="flex items-center gap-2 text-emerald-800 font-semibold" id="step-1">
                         <span class="w-2 h-2 rounded-full bg-emerald-600 animate-ping"></span>
-                        <span>[1/3] Menganalisis & membagi segmen teks...</span>
+                        <span>[1/3] <%= typeof t !== 'undefined' ? t('ai_step_1') : 'Menganalisis & membagi segmen teks...' %></span>
                     </div>
                     <div class="flex items-center gap-2 text-gray-400" id="step-2">
                         <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
-                        <span>[2/3] Menerjemahkan via Ollama LLM...</span>
+                        <span>[2/3] <%= typeof t !== 'undefined' ? t('ai_step_2') : 'Menerjemahkan via Ollama LLM...' %></span>
                     </div>
                     <div class="flex items-center gap-2 text-gray-400" id="step-3">
                         <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
-                        <span>[3/3] Memformat tata letak & menyimpan...</span>
+                        <span>[3/3] <%= typeof t !== 'undefined' ? t('ai_step_3') : 'Memformat tata letak & menyimpan...' %></span>
                     </div>
                 </div>
 
