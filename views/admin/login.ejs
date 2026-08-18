@@ -22,22 +22,35 @@
         </div>
 
         <% if (error) { %>
-            <div class="bg-red-50 text-red-700 p-3 rounded-xl mb-5 text-xs border border-red-200 leading-relaxed">
-                <%= error %>
+            <div class="<% if (typeof isLocked !== 'undefined' && isLocked) { %>bg-amber-50 text-amber-900 border-amber-300<% } else { %>bg-red-50 text-red-700 border-red-200<% } %> p-3.5 rounded-xl mb-5 text-xs border leading-relaxed flex items-start gap-2.5">
+                <% if (typeof isLocked !== 'undefined' && isLocked) { %>
+                    <span class="p-1 rounded bg-amber-200/80 text-amber-900 shrink-0 mt-0.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                    </span>
+                <% } %>
+                <div><%= error %></div>
             </div>
         <% } %>
 
         <!-- Google OAuth Admin Login -->
         <div class="mb-5">
-            <a href="/auth/google?role=admin" class="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-xl font-semibold text-xs transition shadow-xs">
-                <svg class="w-4 h-4" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                </svg>
-                <span>Masuk dengan Google (Penulis Asli)</span>
-            </a>
+            <% if (typeof isLocked !== 'undefined' && isLocked) { %>
+                <button disabled class="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 bg-gray-100 text-gray-400 border border-gray-200 rounded-xl font-semibold text-xs cursor-not-allowed">
+                    <span>Masuk dengan Google (Terkunci)</span>
+                </button>
+            <% } else { %>
+                <a href="/auth/google?role=admin" class="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-xl font-semibold text-xs transition shadow-xs">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                    </svg>
+                    <span>Masuk dengan Google (Penulis Asli)</span>
+                </a>
+            <% } %>
         </div>
 
         <div class="relative flex items-center justify-center mb-5">
@@ -49,13 +62,13 @@
         <form action="/admin/login" method="POST" class="space-y-3.5">
             <div>
                 <label for="username" class="block text-xs font-semibold text-gray-700 mb-1">Nama Pengguna</label>
-                <input type="text" id="username" name="username" required autofocus class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-700 focus:border-emerald-700 focus:bg-white text-xs">
+                <input type="text" id="username" name="username" required autofocus <% if (typeof isLocked !== 'undefined' && isLocked) { %>disabled<% } %> class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-700 focus:border-emerald-700 focus:bg-white text-xs disabled:opacity-50 disabled:cursor-not-allowed">
             </div>
             <div>
                 <label for="password" class="block text-xs font-semibold text-gray-700 mb-1">Kata Sandi</label>
-                <input type="password" id="password" name="password" required class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-700 focus:border-emerald-700 focus:bg-white text-xs">
+                <input type="password" id="password" name="password" required <% if (typeof isLocked !== 'undefined' && isLocked) { %>disabled<% } %> class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-700 focus:border-emerald-700 focus:bg-white text-xs disabled:opacity-50 disabled:cursor-not-allowed">
             </div>
-            <button type="submit" class="w-full bg-emerald-800 hover:bg-emerald-900 text-white py-2.5 px-4 rounded-lg font-semibold text-xs transition">
+            <button type="submit" <% if (typeof isLocked !== 'undefined' && isLocked) { %>disabled class="w-full bg-gray-400 text-white py-2.5 px-4 rounded-lg font-semibold text-xs cursor-not-allowed"<% } else { %>class="w-full bg-emerald-800 hover:bg-emerald-900 text-white py-2.5 px-4 rounded-lg font-semibold text-xs transition shadow-xs cursor-pointer"<% } %>>
                 Masuk ke Dasbor
             </button>
         </form>

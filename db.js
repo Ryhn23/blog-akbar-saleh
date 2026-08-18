@@ -172,7 +172,20 @@ function initDB() {
     }
   }
 
-  // Seed default admin if table is empty
+  // Create Login Lockouts Table for Progressive Brute-Force Protection
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS login_lockouts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      identifier TEXT UNIQUE NOT NULL,
+      failed_attempts INTEGER DEFAULT 0,
+      lockout_tier INTEGER DEFAULT 0,
+      locked_until INTEGER DEFAULT 0,
+      last_failed_at INTEGER DEFAULT 0,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Create default admin user if none exists
   const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
   if (userCount === 0) {
     const adminUser = process.env.ADMIN_USERNAME || 'admin';
@@ -204,10 +217,116 @@ function run(sql, params = []) {
   return db.prepare(sql).run(...(Array.isArray(params) ? params : [params]));
 }
 
+// --- PROGRESSIVE LOGIN LOCKOUT SYSTEM ---
+// Tiers: 1 (15m), 2 (30m), 3 (1h), 4 (3h), 5 (24h / 1 hari)
+const LOCKOUT_DURATIONS = [
+  0,
+  15 * 60 * 1000,      // Tier 1: 15 menit
+  30 * 60 * 1000,      // Tier 2: 30 menit
+  60 * 60 * 1000,      // Tier 3: 1 jam
+  3 * 60 * 60 * 1000,  // Tier 4: 3 jam
+  24 * 60 * 60 * 1000  // Tier 5: 1 hari
+];
+
+function formatRemainingDuration(ms) {
+  if (ms <= 0) return '0 menit';
+  const totalSeconds = Math.ceil(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.ceil((totalSeconds % 3600) / 60);
+
+  if (hours > 0) {
+    return `${hours} jam ${minutes > 0 ? minutes + ' menit' : ''}`.trim();
+  }
+  return `${minutes} menit`;
+}
+
+function getLockoutStatus(identifier) {
+  if (!identifier) return { isLocked: false };
+  const cleanId = String(identifier).trim().toLowerCase();
+  const record = getOne('SELECT * FROM login_lockouts WHERE identifier = ?', [cleanId]);
+  if (!record) return { isLocked: false };
+
+  const now = Date.now();
+  if (record.locked_until && record.locked_until > now) {
+    const remainingMs = record.locked_until - now;
+    return {
+      isLocked: true,
+      remainingMs,
+      remainingText: formatRemainingDuration(remainingMs),
+      tier: record.lockout_tier
+    };
+  }
+
+  return { isLocked: false, record };
+}
+
+function recordFailedLoginAttempt(identifier) {
+  if (!identifier) return { isLocked: false };
+  const cleanId = String(identifier).trim().toLowerCase();
+  const now = Date.now();
+  const record = getOne('SELECT * FROM login_lockouts WHERE identifier = ?', [cleanId]);
+
+  if (!record) {
+    run(
+      'INSERT INTO login_lockouts (identifier, failed_attempts, lockout_tier, locked_until, last_failed_at) VALUES (?, 1, 0, 0, ?)',
+      [cleanId, now]
+    );
+    return {
+      isLocked: false,
+      failedAttempts: 1,
+      remainingAttempts: 4
+    };
+  }
+
+  let attempts = record.failed_attempts + 1;
+  let tier = record.lockout_tier || 0;
+  let lockedUntil = 0;
+
+  if (attempts >= 5) {
+    tier = Math.min(tier + 1, 5);
+    const duration = LOCKOUT_DURATIONS[tier] || LOCKOUT_DURATIONS[1];
+    lockedUntil = now + duration;
+    attempts = 0; // reset attempts for next cycle
+
+    run(
+      'UPDATE login_lockouts SET failed_attempts = ?, lockout_tier = ?, locked_until = ?, last_failed_at = ?, updated_at = CURRENT_TIMESTAMP WHERE identifier = ?',
+      [attempts, tier, lockedUntil, now, cleanId]
+    );
+
+    return {
+      isLocked: true,
+      tier,
+      durationMs: duration,
+      remainingMs: duration,
+      remainingText: formatRemainingDuration(duration)
+    };
+  } else {
+    run(
+      'UPDATE login_lockouts SET failed_attempts = ?, last_failed_at = ?, updated_at = CURRENT_TIMESTAMP WHERE identifier = ?',
+      [attempts, now, cleanId]
+    );
+
+    return {
+      isLocked: false,
+      failedAttempts: attempts,
+      remainingAttempts: 5 - attempts
+    };
+  }
+}
+
+function clearFailedLoginAttempts(identifier) {
+  if (!identifier) return;
+  const cleanId = String(identifier).trim().toLowerCase();
+  run('DELETE FROM login_lockouts WHERE identifier = ?', [cleanId]);
+}
+
 module.exports = {
   initDB,
   getAll,
   getOne,
   run,
-  calculateReadingTime
+  calculateReadingTime,
+  getLockoutStatus,
+  recordFailedLoginAttempt,
+  clearFailedLoginAttempts
 };

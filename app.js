@@ -13,7 +13,16 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const sanitizeHtml = require('sanitize-html');
 
-const { initDB, getAll, getOne, run, calculateReadingTime } = require('./db');
+const {
+  initDB,
+  getAll,
+  getOne,
+  run,
+  calculateReadingTime,
+  getLockoutStatus,
+  recordFailedLoginAttempt,
+  clearFailedLoginAttempts
+} = require('./db');
 const { generateArticlePdf } = require('./services/pdf-service');
 
 const app = express();
@@ -543,6 +552,15 @@ app.get('/auth/google', (req, res, next) => {
     `);
   }
   if (req.query.role === 'admin') {
+    const clientIp = req.ip || req.connection?.remoteAddress || 'unknown';
+    const lock = getLockoutStatus(clientIp);
+    if (lock.isLocked) {
+      return res.status(429).render('admin/login', {
+        error: `Akses login admin dari perangkat ini sedang dikunci sementara karena 5x kesalahan sandi. Silakan tunggu ${lock.remainingText} sebelum mencoba lagi.`,
+        isLocked: true,
+        remainingText: lock.remainingText
+      });
+    }
     req.session.authRole = 'admin';
   } else {
     delete req.session.authRole;
@@ -857,19 +875,63 @@ app.post('/blog/:slug/comments', commentLimiter, (req, res) => {
 // Admin Login
 app.get('/admin/login', (req, res) => {
   if (req.session.userId) return res.redirect('/admin');
-  res.render('admin/login', { error: null });
+  const clientIp = req.ip || req.connection?.remoteAddress || 'unknown';
+  const lock = getLockoutStatus(clientIp);
+
+  if (lock.isLocked) {
+    return res.render('admin/login', {
+      error: `Akses login dari perangkat ini dikunci sementara karena 5 kali percobaan sandi salah. Silakan tunggu ${lock.remainingText} sebelum mencoba lagi.`,
+      isLocked: true,
+      remainingText: lock.remainingText
+    });
+  }
+
+  res.render('admin/login', { error: null, isLocked: false });
 });
 
-app.post('/admin/login', loginLimiter, (req, res) => {
+app.post('/admin/login', (req, res) => {
   const { username, password } = req.body;
+  const clientIp = req.ip || req.connection?.remoteAddress || 'unknown';
+
+  const ipLock = getLockoutStatus(clientIp);
+  const userLock = username ? getLockoutStatus(username) : { isLocked: false };
+
+  if (ipLock.isLocked || userLock.isLocked) {
+    const activeLock = ipLock.isLocked ? ipLock : userLock;
+    return res.status(429).render('admin/login', {
+      error: `Akses login dikunci sementara. Silakan tunggu ${activeLock.remainingText} sebelum mencoba lagi.`,
+      isLocked: true,
+      remainingText: activeLock.remainingText
+    });
+  }
+
   const user = getOne('SELECT * FROM users WHERE username = ?', [username]);
 
   if (user && bcrypt.compareSync(password, user.password)) {
+    // Clear failed attempts on successful login
+    clearFailedLoginAttempts(clientIp);
+    if (username) clearFailedLoginAttempts(username);
+
     req.session.userId = user.id;
     req.session.userName = user.name || user.username;
     res.redirect('/admin');
   } else {
-    res.render('admin/login', { error: 'Nama pengguna atau kata sandi tidak sesuai.' });
+    const failIp = recordFailedLoginAttempt(clientIp);
+    const failUser = username ? recordFailedLoginAttempt(username) : null;
+    const activeFail = (failIp.isLocked || (failUser && failUser.isLocked)) ? (failIp.isLocked ? failIp : failUser) : failIp;
+
+    if (activeFail.isLocked) {
+      return res.status(429).render('admin/login', {
+        error: `Percobaan sandi salah mencapai 5 kali! Akses login dikunci selama ${activeFail.remainingText}.`,
+        isLocked: true,
+        remainingText: activeFail.remainingText
+      });
+    } else {
+      res.render('admin/login', {
+        error: `Nama pengguna atau kata sandi tidak sesuai. Sisa kesempatan: ${activeFail.remainingAttempts} kali lagi sebelum akun dikunci.`,
+        isLocked: false
+      });
+    }
   }
 });
 
