@@ -142,6 +142,22 @@ function initDB() {
     )
   `);
 
+  // Create Page Translations Table (For About, Hero, etc.)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS page_translations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      page_slug TEXT NOT NULL,
+      lang_code TEXT NOT NULL,
+      title TEXT NOT NULL,
+      subtitle TEXT,
+      content TEXT NOT NULL,
+      status TEXT DEFAULT 'ready',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(page_slug, lang_code)
+    )
+  `);
+
   // Seed default About page if not exists
   const aboutPage = db.prepare('SELECT id FROM pages WHERE slug = ?').get('about');
   if (!aboutPage) {
@@ -379,6 +395,33 @@ function getAllPostTranslations(postId) {
   return getAll('SELECT lang_code, title, status, updated_at FROM post_translations WHERE post_id = ?', [postId]);
 }
 
+function getPageTranslation(pageSlug, langCode) {
+  if (!pageSlug || !langCode) return null;
+  return getOne('SELECT * FROM page_translations WHERE page_slug = ? AND lang_code = ?', [pageSlug, langCode]);
+}
+
+function savePageTranslation(pageSlug, langCode, data) {
+  if (!pageSlug || !langCode || !data) return null;
+  const existing = getOne('SELECT id FROM page_translations WHERE page_slug = ? AND lang_code = ?', [pageSlug, langCode]);
+
+  if (existing) {
+    run(
+      `UPDATE page_translations 
+       SET title = ?, subtitle = ?, content = ?, status = 'ready', updated_at = CURRENT_TIMESTAMP 
+       WHERE id = ?`,
+      [data.title || '', data.subtitle || '', data.content || '', existing.id]
+    );
+    return getOne('SELECT * FROM page_translations WHERE id = ?', [existing.id]);
+  } else {
+    run(
+      `INSERT INTO page_translations (page_slug, lang_code, title, subtitle, content, status)
+       VALUES (?, ?, ?, ?, ?, 'ready')`,
+      [pageSlug, langCode, data.title || '', data.subtitle || '', data.content || '']
+    );
+    return getOne('SELECT * FROM page_translations WHERE page_slug = ? AND lang_code = ?', [pageSlug, langCode]);
+  }
+}
+
 module.exports = {
   initDB,
   getAll,
@@ -390,5 +433,7 @@ module.exports = {
   clearFailedLoginAttempts,
   getPostTranslation,
   savePostTranslation,
-  getAllPostTranslations
+  getAllPostTranslations,
+  getPageTranslation,
+  savePageTranslation
 };

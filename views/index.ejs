@@ -4,7 +4,7 @@
     schemaJsonLd: typeof schemaJsonLd !== 'undefined' ? schemaJsonLd : null
 }) %>
 
-<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
     
     <!-- Compact Header Intro -->
     <header class="pb-8 mb-8 border-b border-gray-100">
@@ -15,11 +15,11 @@
         <% } %>
 
         <h1 class="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-gray-900 tracking-tight leading-snug mb-3">
-            <%- typeof heroTitle !== 'undefined' && heroTitle ? heroTitle : 'Catatan, Kajian Ilmiah & <span class="text-emerald-800">Pemikiran Keislaman</span>' %>
+            <%- typeof heroTitle !== 'undefined' && heroTitle ? heroTitle : t('hero_default_title') %>
         </h1>
 
         <div class="text-sm sm:text-base text-gray-600 leading-relaxed max-w-3xl font-light">
-            <%- typeof heroContent !== 'undefined' && heroContent ? heroContent : 'Selamat datang di ruang tulisan pribadi saya.' %>
+            <%- typeof heroContent !== 'undefined' && heroContent ? heroContent : t('hero_default_content') %>
         </div>
     </header>
 
@@ -27,7 +27,7 @@
     <% if (featuredPosts && featuredPosts.length > 0) { %>
         <section class="mb-10">
             <div class="flex items-center justify-between pb-2 mb-4 border-b border-gray-100">
-                <span class="text-xs font-bold uppercase tracking-wider text-emerald-800">Tulisan Utama</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-800"><%= t('featured_section') %></span>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -39,17 +39,17 @@
                                 <span>•</span>
                                 <span><%= new Date(post.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) %></span>
                                 <span>•</span>
-                                <span><%= post.reading_time || 1 %> min read</span>
+                                <span><%= post.reading_time || 1 %> <%= t('min_read') %></span>
                             </div>
                             <h2 class="text-base sm:text-lg font-serif font-bold text-gray-900 mb-1.5 hover:text-emerald-800 transition leading-snug">
-                                <a href="/blog/<%= post.slug %>"><%= post.title %></a>
+                                <a href="/blog/<%= post.slug %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>"><%= post.title %></a>
                             </h2>
                             <p class="text-gray-600 text-xs sm:text-sm leading-relaxed line-clamp-2 mb-3">
                                 <%= post.meta_description || post.content.replace(/<[^>]+>/g, '').substring(0, 130) + '...' %>
                             </p>
                         </div>
-                        <a href="/blog/<%= post.slug %>" class="inline-flex items-center text-xs font-bold text-emerald-800 hover:text-emerald-900 gap-1">
-                            Baca Selengkapnya →
+                        <a href="/blog/<%= post.slug %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="inline-flex items-center text-xs font-bold text-emerald-800 hover:text-emerald-900 gap-1">
+                            <%= t('read_more') %> →
                         </a>
                     </article>
                 <% }) %>
@@ -60,9 +60,9 @@
     <!-- Recent Articles (Compact Stream) -->
     <section>
         <div class="flex items-center justify-between pb-2.5 border-b border-gray-100 mb-4">
-            <h2 class="text-base font-serif font-bold text-gray-900">Tulisan & Kajian Terbaru</h2>
-            <a href="/blog" class="text-xs font-semibold text-emerald-800 hover:underline">
-                Lihat Semua Arsip →
+            <h2 class="text-base font-serif font-bold text-gray-900"><%= t('recent_section') %></h2>
+            <a href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="text-xs font-semibold text-emerald-800 hover:underline">
+                <%= t('all_articles') %> →
             </a>
         </div>
 
@@ -75,11 +75,11 @@
                             <span>•</span>
                             <time datetime="<%= post.created_at %>"><%= new Date(post.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) %></time>
                             <span>•</span>
-                            <span><%= post.reading_time || 1 %> min read</span>
+                            <span><%= post.reading_time || 1 %> <%= t('min_read') %></span>
                         </div>
 
                         <h3 class="text-base sm:text-lg font-serif font-bold text-gray-900 mb-1 group-hover:text-emerald-800 transition leading-snug">
-                            <a href="/blog/<%= post.slug %>">
+                            <a href="/blog/<%= post.slug %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>">
                                 <%= post.title %>
                             </a>
                         </h3>
@@ -88,8 +88,8 @@
                             <%= post.meta_description || post.content.replace(/<[^>]+>/g, '').substring(0, 140) + '...' %>
                         </p>
 
-                        <a href="/blog/<%= post.slug %>" class="inline-flex items-center text-xs font-semibold text-emerald-800 hover:underline">
-                            Baca kajian →
+                        <a href="/blog/<%= post.slug %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="inline-flex items-center text-xs font-semibold text-emerald-800 hover:underline">
+                            <%= t('read_more') %> →
                         </a>
                     </article>
                 <% }) %>
@@ -101,8 +101,8 @@
         </div>
 
         <div class="mt-8 pt-4 border-t border-gray-100 text-center">
-            <a href="/blog" class="inline-flex items-center px-5 py-2 rounded-lg border border-emerald-800 text-emerald-800 hover:bg-emerald-800 hover:text-white font-semibold text-xs transition">
-                Buka Semua Arsip Tulisan (<%= totalPosts %> Artikel)
+            <a href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="inline-flex items-center px-5 py-2 rounded-lg border border-emerald-800 text-emerald-800 hover:bg-emerald-800 hover:text-white font-semibold text-xs transition">
+                <%= t('all_articles') %> (<%= totalPosts %>)
             </a>
         </div>
     </section>

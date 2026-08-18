@@ -4,16 +4,16 @@
     schemaJsonLd: typeof schemaJsonLd !== 'undefined' ? schemaJsonLd : null
 }) %>
 
-<section class="py-12 bg-white min-h-[75vh]">
+<section class="py-12 bg-white min-h-[75vh]" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <!-- Header & Minimalist Search -->
         <div class="mb-10 pb-6 border-b border-gray-100">
             <h1 class="text-2xl sm:text-3xl font-serif font-bold text-gray-900 mb-2">
-                Arsip Kajian & Tulisan
+                <%= t('nav_blog') %>
             </h1>
             <p class="text-sm text-gray-500 mb-6">
-                Kumpulan riset ilmiah, studi keislaman, opini, dan pemikiran oleh <%= authorName %>.
+                <%= t('hero_default_content') %>
             </p>
 
             <form action="/blog" method="GET" class="relative max-w-lg">
@@ -21,7 +21,7 @@
                     type="text" 
                     name="q" 
                     value="<%= searchQuery %>" 
-                    placeholder="Cari judul atau topik kajian..." 
+                    placeholder="<%= t('search_placeholder') %>" 
                     class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-emerald-700 focus:border-emerald-700 focus:bg-white transition"
                 >
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
@@ -30,6 +30,9 @@
                 <% if (selectedCategory) { %>
                     <input type="hidden" name="category" value="<%= selectedCategory %>">
                 <% } %>
+                <% if (typeof currentLang !== 'undefined' && currentLang !== 'id') { %>
+                    <input type="hidden" name="lang" value="<%= currentLang %>">
+                <% } %>
             </form>
         </div>
 
@@ -37,14 +40,14 @@
         <% if (categories && categories.length > 0) { %>
             <div class="flex items-center flex-wrap gap-2 mb-8">
                 <a 
-                    href="/blog<%= searchQuery ? '?q=' + encodeURIComponent(searchQuery) : '' %>" 
+                    href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang + (searchQuery ? '&q=' + encodeURIComponent(searchQuery) : '') : (searchQuery ? '?q=' + encodeURIComponent(searchQuery) : '') %>" 
                     class="px-3 py-1 rounded-md text-xs font-semibold transition <%= !selectedCategory ? 'bg-emerald-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-800' %>"
                 >
-                    Semua Kategori
+                    <%= t('all_categories') %>
                 </a>
                 <% categories.forEach(cat => { %>
                     <a 
-                        href="/blog?category=<%= encodeURIComponent(cat.category) %><%= searchQuery ? '&q=' + encodeURIComponent(searchQuery) : '' %>" 
+                        href="/blog?category=<%= encodeURIComponent(cat.category) %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '&lang=' + currentLang : '' %><%= searchQuery ? '&q=' + encodeURIComponent(searchQuery) : '' %>" 
                         class="px-3 py-1 rounded-md text-xs font-medium transition <%= selectedCategory === cat.category ? 'bg-emerald-800 text-white font-semibold' : 'bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-800' %>"
                     >
                         <%= cat.category %> (<%= cat.count %>)
@@ -63,7 +66,7 @@
                     <% if (searchQuery) { %>pencarian <strong>"<%= searchQuery %>"</strong><% } %>
                     (<%= posts.length %> artikel)
                 </span>
-                <a href="/blog" class="font-bold text-emerald-800 hover:underline">Hapus Filter</a>
+                <a href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="font-bold text-emerald-800 hover:underline">Hapus Filter</a>
             </div>
         <% } %>
 
@@ -77,11 +80,11 @@
                             <span>•</span>
                             <time datetime="<%= post.created_at %>"><%= new Date(post.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) %></time>
                             <span>•</span>
-                            <span><%= post.reading_time || 1 %> menit baca</span>
+                            <span><%= post.reading_time || 1 %> <%= t('min_read') %></span>
                         </div>
 
                         <h2 class="text-lg sm:text-xl font-serif font-bold text-gray-900 mb-2 group-hover:text-emerald-800 transition leading-snug">
-                            <a href="/blog/<%= post.slug %>">
+                            <a href="/blog/<%= post.slug %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>">
                                 <%= post.title %>
                             </a>
                         </h2>
@@ -90,8 +93,8 @@
                             <%= post.meta_description || post.content.replace(/<[^>]+>/g, '').substring(0, 140) + '...' %>
                         </p>
 
-                        <a href="/blog/<%= post.slug %>" class="inline-flex items-center text-xs font-semibold text-emerald-800 hover:underline">
-                            Baca selengkapnya →
+                        <a href="/blog/<%= post.slug %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="inline-flex items-center text-xs font-semibold text-emerald-800 hover:underline">
+                            <%= t('read_more') %> →
                         </a>
                     </article>
                 <% }) %>

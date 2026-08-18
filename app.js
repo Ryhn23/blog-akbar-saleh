@@ -24,10 +24,18 @@ const {
   clearFailedLoginAttempts,
   getPostTranslation,
   savePostTranslation,
-  getAllPostTranslations
+  getAllPostTranslations,
+  getPageTranslation,
+  savePageTranslation
 } = require('./db');
 const { generateArticlePdf } = require('./services/pdf-service');
-const { SUPPORTED_LANGUAGES, translatePostToLanguage, translatePostAllLanguages } = require('./services/ollama-translator');
+const { 
+  SUPPORTED_LANGUAGES, 
+  t, 
+  translatePostToLanguage, 
+  translatePageToLanguage, 
+  translatePostAllLanguages 
+} = require('./services/ollama-translator');
 
 const app = express();
 const PORT = process.env.PORT || 7842;
@@ -179,11 +187,14 @@ app.use((req, res, next) => {
   res.locals.authorRole = process.env.AUTHOR_ROLE || 'Kyai & Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta';
   res.locals.authorBio = process.env.AUTHOR_BIO || 'Kyai dan Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta. Menulis seputar studi keislaman, riset keilmuan, dan analisis sosial keagamaan.';
   res.locals.authorEmail = process.env.AUTHOR_EMAIL || 'akbarsaleh@khatamunnabiyyin.com';
+  res.locals.authorLocation = process.env.AUTHOR_LOCATION || 'Jakarta, Indonesia';
+  res.locals.appUrl = process.env.APP_URL || `http://localhost:${PORT}`;
   const langQuery = (req.query.lang || 'id').toLowerCase();
   const currentLang = SUPPORTED_LANGUAGES[langQuery] ? langQuery : 'id';
   res.locals.currentLang = currentLang;
   res.locals.isRtl = (currentLang === 'ar' || currentLang === 'fa');
   res.locals.supportedLanguages = Object.values(SUPPORTED_LANGUAGES);
+  res.locals.t = (key) => t(key, currentLang);
   res.locals.currentPath = req.path;
   res.locals.isLoggedIn = !!req.session.userId;
   res.locals.readerUser = req.session.readerUser || null;
@@ -458,13 +469,41 @@ app.get('/blog', (req, res) => {
   });
 });
 
-// About Page (Dynamic from DB)
-app.get('/about', (req, res) => {
+// About Page (Dynamic from DB with Ollama Translation)
+app.get('/about', async (req, res) => {
   const baseUrl = process.env.APP_URL || `http://localhost:${PORT}`;
   const authorName = process.env.AUTHOR_NAME || 'Akbar Saleh, B.A.';
   const authorRole = process.env.AUTHOR_ROLE || 'Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta';
+  const targetLang = (req.query.lang || 'id').toLowerCase();
 
-  const page = getOne('SELECT * FROM pages WHERE slug = ?', ['about']);
+  let page = getOne('SELECT * FROM pages WHERE slug = ?', ['about']);
+  if (!page) {
+    page = {
+      title: `Tentang ${authorName}`,
+      subtitle: authorRole,
+      content: '<p>Halaman tentang penulis.</p>'
+    };
+  }
+
+  let activePage = { ...page };
+  let isTranslated = false;
+
+  if (targetLang !== 'id' && SUPPORTED_LANGUAGES[targetLang]) {
+    let trans = getPageTranslation('about', targetLang);
+    if (!trans) {
+      try {
+        trans = await translatePageToLanguage('about', page, targetLang);
+      } catch (err) {
+        console.error(`[Ollama Page Translate Failed for 'about' to ${targetLang}]:`, err.message);
+      }
+    }
+    if (trans) {
+      activePage.title = trans.title || page.title;
+      activePage.subtitle = trans.subtitle || page.subtitle;
+      activePage.content = trans.content || page.content;
+      isTranslated = true;
+    }
+  }
 
   const schemaJsonLd = {
     "@context": "https://schema.org",
@@ -473,7 +512,7 @@ app.get('/about', (req, res) => {
         "@type": "ProfilePage",
         "@id": `${baseUrl}/about#webpage`,
         "url": `${baseUrl}/about`,
-        "name": page?.title || `Tentang ${authorName}`,
+        "name": activePage.title || `Tentang ${authorName}`,
         "isPartOf": {
           "@id": `${baseUrl}/#website`
         },
@@ -485,7 +524,7 @@ app.get('/about', (req, res) => {
         "@type": "Person",
         "@id": `${baseUrl}/about#person`,
         "name": authorName,
-        "jobTitle": page?.subtitle || authorRole,
+        "jobTitle": activePage.subtitle || authorRole,
         "affiliation": {
           "@type": "Organization",
           "name": "Pondok Pesantren Khatamun Nabiyyin Jakarta"
@@ -504,11 +543,10 @@ app.get('/about', (req, res) => {
   };
 
   res.render('about', {
-    page: page || {
-      title: `Tentang ${authorName}`,
-      subtitle: authorRole,
-      content: '<p>Halaman tentang penulis.</p>'
-    },
+    page: activePage,
+    originalPage: page,
+    isTranslated,
+    targetLang,
     canonicalUrl: `${baseUrl}/about`,
     schemaJsonLd
   });

@@ -68,18 +68,16 @@
                     <span class="text-xs text-gray-500 font-medium tracking-wide">
                         <%= authorRole %>
                     </span>
-                </a>
-
-                <!-- Desktop Navigation Links & Language Switcher -->
+                          <!-- Desktop Navigation Links & Language Switcher -->
                 <nav class="hidden sm:flex items-center space-x-6">
                     <a href="/" class="text-sm font-medium transition-colors <%= currentPath === '/' ? 'text-emerald-800 font-semibold border-b-2 border-emerald-700 pb-0.5' : 'text-gray-600 hover:text-emerald-800' %>">
-                        Beranda
+                        <%= typeof t !== 'undefined' ? t('nav_home') : 'Beranda' %>
                     </a>
                     <a href="/blog" class="text-sm font-medium transition-colors <%= currentPath.startsWith('/blog') ? 'text-emerald-800 font-semibold border-b-2 border-emerald-700 pb-0.5' : 'text-gray-600 hover:text-emerald-800' %>">
-                        Kajian & Tulisan
+                        <%= typeof t !== 'undefined' ? t('nav_blog') : 'Kajian & Tulisan' %>
                     </a>
                     <a href="/about" class="text-sm font-medium transition-colors <%= currentPath === '/about' ? 'text-emerald-800 font-semibold border-b-2 border-emerald-700 pb-0.5' : 'text-gray-600 hover:text-emerald-800' %>">
-                        Tentang
+                        <%= typeof t !== 'undefined' ? t('nav_about') : 'Tentang' %>
                     </a>
 
                     <!-- Multi-Language Switcher (ID | EN | AR | FA) -->
@@ -115,7 +113,7 @@
 
                     <% if (isLoggedIn) { %>
                         <a href="/admin" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-800 text-white hover:bg-emerald-900 transition">
-                            Dasbor
+                            <%= typeof t !== 'undefined' ? t('nav_dashboard') : 'Dasbor' %>
                         </a>
                     <% } %>
                 </nav>
@@ -146,6 +144,54 @@
             </div>
         </div>
 
+        <!-- Global AI Translation Loading Overlay Modal -->
+        <div id="ai-translate-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md hidden transition-opacity duration-300">
+            <div class="bg-white rounded-2xl border border-emerald-100 shadow-2xl p-6 sm:p-8 max-w-md w-full mx-4 text-center transform transition-all duration-300 scale-95" id="ai-translate-card">
+                <!-- Glowing Pulsing Ring / Brain Animation -->
+                <div class="relative w-20 h-20 mx-auto mb-5">
+                    <div class="absolute inset-0 rounded-full bg-emerald-400 opacity-25 animate-ping"></div>
+                    <div class="relative flex items-center justify-center w-20 h-20 rounded-full bg-emerald-50 border-2 border-emerald-500 shadow-inner">
+                        <svg class="w-10 h-10 text-emerald-800 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/80 text-emerald-900 text-[11px] font-bold tracking-wide uppercase mb-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                    <span>Ollama AI (Gemma 4:31B)</span>
+                </div>
+
+                <h3 class="text-base sm:text-lg font-serif font-bold text-gray-900 mb-1" id="ai-translate-title">
+                    Menerjemahkan Konten Ilmiah...
+                </h3>
+                <p class="text-xs text-gray-500 mb-5 leading-relaxed" id="ai-translate-sub">
+                    Menghubungkan ke server Ollama AI untuk menerjemahkan naskah dan istilah keislaman secara akurat.
+                </p>
+
+                <!-- Step Progress Sequence Indicator -->
+                <div class="space-y-2 text-left text-xs bg-gray-50 p-3.5 rounded-xl border border-gray-100 mb-5 font-mono" id="ai-translate-steps">
+                    <div class="flex items-center gap-2 text-emerald-800 font-semibold" id="step-1">
+                        <span class="w-2 h-2 rounded-full bg-emerald-600 animate-ping"></span>
+                        <span>[1/3] Menganalisis & membagi segmen teks...</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-gray-400" id="step-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
+                        <span>[2/3] Menerjemahkan via Ollama LLM...</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-gray-400" id="step-3">
+                        <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
+                        <span>[3/3] Memformat tata letak & menyimpan...</span>
+                    </div>
+                </div>
+
+                <!-- Animated Progress Bar -->
+                <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                    <div id="ai-progress-bar" class="bg-gradient-to-r from-emerald-600 to-teal-500 h-1.5 rounded-full transition-all duration-700 w-1/4"></div>
+                </div>
+            </div>
+        </div>
+
         <script>
         function toggleLangDropdown(e) {
             if (e) e.stopPropagation();
@@ -159,14 +205,54 @@
             if (menu) menu.classList.toggle('hidden');
         }
 
+        function showTranslationLoader(langCode) {
+            const modal = document.getElementById('ai-translate-modal');
+            const card = document.getElementById('ai-translate-card');
+            const sub = document.getElementById('ai-translate-sub');
+            const bar = document.getElementById('ai-progress-bar');
+            const s1 = document.getElementById('step-1');
+            const s2 = document.getElementById('step-2');
+            const s3 = document.getElementById('step-3');
+
+            if (!modal) return;
+            const targetNames = { en: 'English', ar: 'العربية (Arabic)', fa: 'فارسی (Persian)', id: 'Bahasa Indonesia' };
+            if (sub) sub.textContent = `Menyiapkan terjemahan ke bahasa ${targetNames[langCode] || langCode} via Ollama AI...`;
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                card.classList.remove('scale-95');
+                card.classList.add('scale-100');
+            }, 10);
+
+            // Sequence timeline simulation
+            setTimeout(() => {
+                if (bar) bar.style.width = '60%';
+                if (s1) { s1.className = 'flex items-center gap-2 text-gray-500 line-through'; }
+                if (s2) { s2.className = 'flex items-center gap-2 text-emerald-800 font-semibold'; s2.firstElementChild.className = 'w-2 h-2 rounded-full bg-emerald-600 animate-ping'; }
+            }, 1500);
+
+            setTimeout(() => {
+                if (bar) bar.style.width = '90%';
+                if (s2) { s2.className = 'flex items-center gap-2 text-gray-500 line-through'; }
+                if (s3) { s3.className = 'flex items-center gap-2 text-emerald-800 font-semibold'; s3.firstElementChild.className = 'w-2 h-2 rounded-full bg-emerald-600 animate-ping'; }
+            }, 4000);
+        }
+
         function switchLanguage(langCode) {
-            const url = new URL(window.location.href);
-            if (langCode === 'id') {
-                url.searchParams.delete('lang');
-            } else {
-                url.searchParams.set('lang', langCode);
-            }
-            window.location.href = url.toString();
+            const current = '<%= typeof currentLang !== "undefined" ? currentLang : "id" %>';
+            if (langCode === current) return;
+
+            showTranslationLoader(langCode);
+
+            setTimeout(() => {
+                const url = new URL(window.location.href);
+                if (langCode === 'id') {
+                    url.searchParams.delete('lang');
+                } else {
+                    url.searchParams.set('lang', langCode);
+                }
+                window.location.href = url.toString();
+            }, 400);
         }
 
         document.addEventListener('click', function(e) {
@@ -185,11 +271,11 @@
 
         <!-- Mobile Menu Dropdown -->
         <div class="sm:hidden hidden bg-white border-b border-gray-100 px-4 pt-2 pb-4 space-y-2" id="mobile-menu">
-            <a href="/" class="block px-3 py-2 rounded-lg text-sm font-medium <%= currentPath === '/' ? 'text-emerald-800 bg-emerald-50 font-bold' : 'text-gray-700 hover:bg-gray-50' %>">Beranda</a>
-            <a href="/blog" class="block px-3 py-2 rounded-lg text-sm font-medium <%= currentPath.startsWith('/blog') ? 'text-emerald-800 bg-emerald-50 font-bold' : 'text-gray-700 hover:bg-gray-50' %>">Kajian & Tulisan</a>
-            <a href="/about" class="block px-3 py-2 rounded-lg text-sm font-medium <%= currentPath === '/about' ? 'text-emerald-800 bg-emerald-50 font-bold' : 'text-gray-700 hover:bg-gray-50' %>">Tentang</a>
+            <a href="/" class="block px-3 py-2 rounded-lg text-sm font-medium <%= currentPath === '/' ? 'text-emerald-800 bg-emerald-50 font-bold' : 'text-gray-700 hover:bg-gray-50' %>"><%= typeof t !== 'undefined' ? t('nav_home') : 'Beranda' %></a>
+            <a href="/blog" class="block px-3 py-2 rounded-lg text-sm font-medium <%= currentPath.startsWith('/blog') ? 'text-emerald-800 bg-emerald-50 font-bold' : 'text-gray-700 hover:bg-gray-50' %>"><%= typeof t !== 'undefined' ? t('nav_blog') : 'Kajian & Tulisan' %></a>
+            <a href="/about" class="block px-3 py-2 rounded-lg text-sm font-medium <%= currentPath === '/about' ? 'text-emerald-800 bg-emerald-50 font-bold' : 'text-gray-700 hover:bg-gray-50' %>"><%= typeof t !== 'undefined' ? t('nav_about') : 'Tentang' %></a>
             <% if (isLoggedIn) { %>
-                <a href="/admin" class="block px-3 py-2 rounded-lg text-sm font-semibold text-emerald-800 bg-emerald-100">Dasbor Admin</a>
+                <a href="/admin" class="block px-3 py-2 rounded-lg text-sm font-semibold text-emerald-800 bg-emerald-100"><%= typeof t !== 'undefined' ? t('nav_dashboard') : 'Dasbor Admin' %></a>
             <% } %>
         </div>
     </header>

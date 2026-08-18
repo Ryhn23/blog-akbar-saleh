@@ -7,9 +7,26 @@
 <section class="py-10 sm:py-14 bg-white min-h-[80vh]">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         
+        <% if (typeof isTranslated !== 'undefined' && isTranslated) { %>
+            <!-- AI Translation Active Notice -->
+            <div class="mb-6 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 shadow-2xs">
+                <div class="flex items-center gap-2 text-emerald-950">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-800 text-white font-bold text-[10px]">
+                        AI Translation
+                    </span>
+                    <span><%= t('ai_translation_badge') %></span>
+                </div>
+                <a href="/about" class="text-emerald-800 hover:text-emerald-950 font-semibold underline text-[11px] shrink-0">
+                    <%= t('view_original') %>
+                </a>
+            </div>
+        <% } %>
+
         <!-- Header Profile -->
-        <header class="border-b border-gray-100 pb-6 mb-8">
-            <span class="text-xs font-bold uppercase tracking-wider text-emerald-800 block mb-2">Profil Penulis</span>
+        <header class="border-b border-gray-100 pb-6 mb-8" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-800 block mb-2">
+                <%= t('author_profile_tag') %>
+            </span>
             <h1 class="text-3xl sm:text-4xl font-serif font-bold text-gray-900 tracking-tight mb-2">
                 <%= (page && page.title) ? page.title : authorName %>
             </h1>
@@ -25,13 +42,13 @@
         </header>
 
         <!-- Dynamic Content from Quill Editor -->
-        <div class="quill-content mb-12">
+        <div class="quill-content mb-12" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
             <%- (page && page.content) ? page.content : '<p>Belum ada isi profil.</p>' %>
         </div>
 
         <!-- Contact & Location Box -->
         <div class="pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-2">
-            <span>Kontak Resmi: <a href="mailto:<%= authorEmail %>" class="text-emerald-800 font-semibold hover:underline"><%= authorEmail %></a></span>
+            <span><%= t('official_contact') %>: <a href="mailto:<%= authorEmail %>" class="text-emerald-800 font-semibold hover:underline"><%= authorEmail %></a></span>
             <span><%= authorLocation || 'Jakarta, Indonesia' %></span>
         </div>
 

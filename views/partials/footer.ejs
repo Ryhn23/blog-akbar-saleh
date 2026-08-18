@@ -4,32 +4,9 @@
     <footer class="bg-white border-t border-gray-100 mt-12 py-6">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-center items-center text-xs text-gray-400 text-center">
-                <p>&copy; <%= new Date().getFullYear() %> <%= siteName %>. Seluruh Hak Cipta Dilindungi.</p>
+                <p>&copy; <%= new Date().getFullYear() %> <%= siteName %>. <%= typeof t !== 'undefined' ? t('copyright_notice') : 'Seluruh Hak Cipta Dilindungi.' %></p>
             </div>
         </div>
     </footer>
-
-    <!-- Multi-language Auto Translate Integration (Google Translate API Draft) -->
-    <script type="text/javascript">
-        function googleTranslateElementInit() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'id',
-                includedLanguages: 'id,en,ar',
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-                autoDisplay: false
-            }, 'google_translate_element');
-
-            // Also for mobile if present
-            if (document.getElementById('google_translate_element_mobile')) {
-                new google.translate.TranslateElement({
-                    pageLanguage: 'id',
-                    includedLanguages: 'id,en,ar',
-                    layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-                    autoDisplay: false
-                }, 'google_translate_element_mobile');
-            }
-        }
-    </script>
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>
