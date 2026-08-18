@@ -37,7 +37,7 @@
                             <div class="flex items-center gap-2 text-[11px] text-emerald-800 font-medium mb-1.5">
                                 <span class="px-2 py-0.5 rounded bg-white text-emerald-900 border border-emerald-200 font-semibold"><%= post.category %></span>
                                 <span>•</span>
-                                <span><%= new Date(post.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) %></span>
+                                <span><%= new Date(post.created_at).toLocaleDateString((typeof currentLang !== 'undefined' && currentLang === 'ar') ? 'ar-EG' : ((typeof currentLang !== 'undefined' && currentLang === 'fa') ? 'fa-IR' : ((typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en-US' : 'id-ID')), { day: 'numeric', month: 'short', year: 'numeric' }) %></span>
                                 <span>•</span>
                                 <span><%= post.reading_time || 1 %> <%= t('min_read') %></span>
                             </div>
@@ -73,7 +73,7 @@
                         <div class="flex items-center gap-2 text-xs text-gray-400 mb-1">
                             <span class="text-emerald-800 font-semibold"><%= post.category || 'Kajian' %></span>
                             <span>•</span>
-                            <time datetime="<%= post.created_at %>"><%= new Date(post.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) %></time>
+                            <time datetime="<%= post.created_at %>"><%= new Date(post.created_at).toLocaleDateString((typeof currentLang !== 'undefined' && currentLang === 'ar') ? 'ar-EG' : ((typeof currentLang !== 'undefined' && currentLang === 'fa') ? 'fa-IR' : ((typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en-US' : 'id-ID')), { day: 'numeric', month: 'short', year: 'numeric' }) %></time>
                             <span>•</span>
                             <span><%= post.reading_time || 1 %> <%= t('min_read') %></span>
                         </div>
@@ -95,7 +95,7 @@
                 <% }) %>
             <% } else { %>
                 <div class="text-center py-8 text-gray-400 text-xs">
-                    Belum ada tulisan yang dipublikasikan.
+                    <%= t('no_articles_yet') %>
                 </div>
             <% } %>
         </div>

@@ -66,7 +66,7 @@
                     <% if (searchQuery) { %>pencarian <strong>"<%= searchQuery %>"</strong><% } %>
                     (<%= posts.length %> artikel)
                 </span>
-                <a href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="font-bold text-emerald-800 hover:underline">Hapus Filter</a>
+                <a href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="font-bold text-emerald-800 hover:underline"><%= t('filter_clear') %></a>
             </div>
         <% } %>
 
@@ -78,7 +78,7 @@
                         <div class="flex items-center gap-3 text-xs text-gray-500 mb-2">
                             <span class="text-emerald-800 font-semibold"><%= post.category || 'Kajian' %></span>
                             <span>•</span>
-                            <time datetime="<%= post.created_at %>"><%= new Date(post.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) %></time>
+                            <time datetime="<%= post.created_at %>"><%= new Date(post.created_at).toLocaleDateString((typeof currentLang !== 'undefined' && currentLang === 'ar') ? 'ar-EG' : ((typeof currentLang !== 'undefined' && currentLang === 'fa') ? 'fa-IR' : ((typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en-US' : 'id-ID')), { day: 'numeric', month: 'long', year: 'numeric' }) %></time>
                             <span>•</span>
                             <span><%= post.reading_time || 1 %> <%= t('min_read') %></span>
                         </div>
@@ -100,7 +100,7 @@
                 <% }) %>
             <% } else { %>
                 <div class="text-center py-12 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                    <p class="text-sm">Tidak ditemukan tulisan yang cocok.</p>
+                    <p class="text-sm"><%= t('no_articles_found') %></p>
                 </div>
             <% } %>
         </div>

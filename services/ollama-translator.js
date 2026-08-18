@@ -151,10 +151,166 @@ const UI_DICTIONARY = {
     fa: 'فایل پیوست مقاله'
   },
   comments_heading: {
-    id: 'Diskusi & Tanggapan Ilmiah',
-    en: 'Scholarly Discussion & Comments',
-    ar: 'المناقشات والتعليقات العلمية',
-    fa: 'بحث و نظرات علمی'
+    id: 'Tanggapan & Diskusi',
+    en: 'Responses & Discussion',
+    ar: 'التعليقات والمناقشات',
+    fa: 'دیدگاه‌ها و گفتگوها'
+  },
+  archive_breadcrumb: {
+    id: 'Arsip Tulisan',
+    en: 'Article Archives',
+    ar: 'أرشيف المقالات',
+    fa: 'آرشیو مقالات'
+  },
+  share_article: {
+    id: 'Bagikan Artikel Ini',
+    en: 'Share This Article',
+    ar: 'شارك هذه المقالة',
+    fa: 'اشتراک‌گذاری این مقاله'
+  },
+  share_subtitle: {
+    id: 'Sebarkan tulisan ini ke WhatsApp, Telegram, atau simpan arsip PDF resminya.',
+    en: 'Share this article to WhatsApp, Telegram, or download the official PDF.',
+    ar: 'شارك هذا المقال عبر واتساب، تيليجرام، أو احفظ نسخة PDF الرسمية.',
+    fa: 'این مقاله را در واتساپ، تلگرام به اشتراک بگذارید یا نسخه رسمی PDF را ذخیره کنید.'
+  },
+  share_now: {
+    id: 'Bagikan Sekarang',
+    en: 'Share Now',
+    ar: 'مشاركة الآن',
+    fa: 'اشتراک‌گذاری'
+  },
+  copy_link: {
+    id: 'Salin Tautan',
+    en: 'Copy Link',
+    ar: 'نسخ الرابط',
+    fa: 'کپی پیوند'
+  },
+  link_copied: {
+    id: 'Tautan artikel berhasil disalin!',
+    en: 'Article link copied to clipboard!',
+    ar: 'تم نسخ رابط المقال بنجاح!',
+    fa: 'پیوند مقاله با موفقیت کپی شد!'
+  },
+  attachment_label: {
+    id: 'Lampiran Dokumen / Makalah',
+    en: 'Document Attachment / Paper',
+    ar: 'ملف المرفقات / ورقة بحثية',
+    fa: 'پیوست سند / مقاله'
+  },
+  file_size: {
+    id: 'Ukuran berkas',
+    en: 'File size',
+    ar: 'حجم الملف',
+    fa: 'حجم فایل'
+  },
+  download_document: {
+    id: 'Unduh Dokumen',
+    en: 'Download Document',
+    ar: 'تحميل الملف',
+    fa: 'دانلود فایل'
+  },
+  related_posts: {
+    id: 'Tulisan Terkait Lainnya',
+    en: 'Related Articles',
+    ar: 'مقالات ذات صلة',
+    fa: 'مطالب مرتبط دیگر'
+  },
+  sort_label: {
+    id: 'Urutan:',
+    en: 'Sort:',
+    ar: 'الترتيب:',
+    fa: 'ترتیب:'
+  },
+  comment_login_notice: {
+    id: 'Untuk menjaga adab diskusi dan mencegah spam, silakan masuk menggunakan akun Google Anda sebelum menulis atau membalas tanggapan.',
+    en: 'To maintain discussion ethics and prevent spam, please sign in with your Google account before commenting.',
+    ar: 'للحفاظ على آداب الحوار ومنع الرسائل المزعجة، يرجى تسجيل الدخول بحساب Google قبل التعليق.',
+    fa: 'برای حفظ ادب گفتگو و جلوگیری از هرزنامه، لطفاً پیش از ارسال نظر با حساب گوگل خود وارد شوید.'
+  },
+  login_with_google_to_comment: {
+    id: 'Masuk dengan Google untuk Berkomentar',
+    en: 'Sign in with Google to Comment',
+    ar: 'تسجيل الدخول عبر Google للتعليق',
+    fa: 'ورود با گوگل برای ثبت نظر'
+  },
+  reply: {
+    id: 'Balas',
+    en: 'Reply',
+    ar: 'رد',
+    fa: 'پاسخ'
+  },
+  original_author_badge: {
+    id: 'Penulis Asli',
+    en: 'Original Author',
+    ar: 'الكاتب الأصلي',
+    fa: 'نویسنده اصلی'
+  },
+  verified_google: {
+    id: 'Terverifikasi Akun Google',
+    en: 'Verified Google Account',
+    ar: 'تم التحقق عبر Google',
+    fa: 'تأیید شده با حساب گوگل'
+  },
+  replying_to: {
+    id: 'Membalas tanggapan dari',
+    en: 'Replying to',
+    ar: 'الرد على تعليق',
+    fa: 'پاسخ به دیدگاه'
+  },
+  close: {
+    id: 'Tutup',
+    en: 'Close',
+    ar: 'إغلاق',
+    fa: 'بستن'
+  },
+  write_reply_placeholder: {
+    id: 'Tulis balasan Anda...',
+    en: 'Write your reply...',
+    ar: 'اكتب ردك هنا...',
+    fa: 'پاسخ خود را بنویسید...'
+  },
+  send_reply: {
+    id: 'Kirim Balasan',
+    en: 'Send Reply',
+    ar: 'إرسال الرد',
+    fa: 'ارسال پاسخ'
+  },
+  send_comment: {
+    id: 'Kirim Tanggapan',
+    en: 'Submit Response',
+    ar: 'إرسال التعليق',
+    fa: 'ارسال دیدگاه'
+  },
+  write_comment_placeholder: {
+    id: 'Tuliskan pandangan atau tanggapan ilmiah Anda...',
+    en: 'Write your scholarly perspective or comment...',
+    ar: 'اكتب وجهة نظرك أو تعقيبك العلمي...',
+    fa: 'دیدگاه یا تحلیل علمی خود را بنویسید...'
+  },
+  no_comments_yet: {
+    id: 'Belum ada tanggapan untuk artikel ini. Jadilah yang pertama memulai diskusi.',
+    en: 'No responses yet for this article. Be the first to start the discussion.',
+    ar: 'لا توجد تعليقات بعد على هذا المقال. كن أول من يبدأ النقاش.',
+    fa: 'هنوز دیدگاهی برای این مقاله ثبت نشده است. اولین نفری باشید که گفتگو را آغاز می‌کند.'
+  },
+  back_to_archive: {
+    id: '← Kembali ke Semua Arsip',
+    en: '← Back to All Articles',
+    ar: '← العودة إلى جميع الأرشيفات',
+    fa: '← بازگشت به تمامی آرشیوها'
+  },
+  back_to_top: {
+    id: 'Kembali ke Atas ↑',
+    en: 'Back to Top ↑',
+    ar: 'العودة إلى الأعلى ↑',
+    fa: 'بازگشت به بالا ↑'
+  },
+  logout: {
+    id: 'Keluar',
+    en: 'Sign Out',
+    ar: 'تسجيل الخروج',
+    fa: 'خروج'
   },
   write_comment: {
     id: 'Tulis Tanggapan Anda',
@@ -191,6 +347,48 @@ const UI_DICTIONARY = {
     en: 'Read Original (Indonesian) ↗',
     ar: 'قراءة النص الأصلي (الإندونيسية) ↗',
     fa: 'مشاهده متن اصلی (اندونزیایی) ↗'
+  },
+  no_articles_found: {
+    id: 'Tidak ditemukan tulisan yang cocok.',
+    en: 'No matching articles found.',
+    ar: 'لم يتم العثور على مقالات مطابقة.',
+    fa: 'هیچ مقاله‌ای یافت نشد.'
+  },
+  filter_clear: {
+    id: 'Hapus Filter',
+    en: 'Clear Filter',
+    ar: 'إزالة التصفية',
+    fa: 'حذف فیلتر'
+  },
+  ai_translated_notice: {
+    id: 'Diterjemahkan secara akademis oleh',
+    en: 'Scholarly translated by',
+    ar: 'ترجمة أكاديمية بواسطة',
+    fa: 'ترجمه تخصصی توسط'
+  },
+  to_language: {
+    id: 'ke bahasa',
+    en: 'into',
+    ar: 'إلى اللغة',
+    fa: 'به زبان'
+  },
+  read_original_id: {
+    id: 'Baca Naskah Asli (Indonesia) ↗',
+    en: 'Read Original (Indonesian) ↗',
+    ar: 'قراءة النص الأصلي (الإندونيسية) ↗',
+    fa: 'خواندن متن اصلی (اندونزیایی) ↗'
+  },
+  no_articles_yet: {
+    id: 'Belum ada tulisan yang dipublikasikan.',
+    en: 'No articles published yet.',
+    ar: 'لم يتم نشر أي مقالات بعد.',
+    fa: 'هنوز مقاله‌ای منتشر نشده است.'
+  },
+  default_location: {
+    id: 'Jakarta, Indonesia',
+    en: 'Jakarta, Indonesia',
+    ar: 'جاكرتا، إندونيسيا',
+    fa: 'جاکارتا، اندونزی'
   },
   author_profile_tag: {
     id: 'Profil Penulis',

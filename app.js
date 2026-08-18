@@ -933,7 +933,7 @@ app.get('/blog/:slug', async (req, res) => {
     schemaJsonLd,
     isAdminPreview: isUnpublishedOrHidden && isAdmin,
     previewReason,
-    relatedPosts: relatedPosts.length > 0 ? relatedPosts : getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 AND id != ? ORDER BY created_at DESC LIMIT 3', [post.id])
+    relatedPosts: (relatedPosts.length > 0 ? relatedPosts : getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 AND id != ? ORDER BY created_at DESC LIMIT 3', [post.id])).map(p => localizePost(p, targetLang))
   });
 });
 
