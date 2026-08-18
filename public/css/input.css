@@ -1,0 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+    width: 100%;
+}
+
+body {
+    overflow-x: hidden;
+    width: 100%;
+    background-color: #ffffff;
+    color: #1f2937;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbar - Minimalist Green */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #ffffff;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #15803d;
+}
+
+/* Arabic Text Typography */
+.arabic-text {
+    font-family: 'Amiri', 'Scheherazade New', serif;
+    font-size: 1.35rem;
+    line-height: 2.2;
+    direction: rtl;
+    text-align: right;
+    color: #14532d;
+}
+
+/* Clean Long-form Article Typography */
+.quill-content {
+    color: #374151;
+    font-size: 1.125rem;
+    line-height: 1.95;
+    font-family: 'Merriweather', Georgia, serif;
+}
+
+.quill-content h1,
+.quill-content h2,
+.quill-content h3,
+.quill-content h4 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #111827;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-top: 2.25rem;
+    margin-bottom: 0.85rem;
+}
+
+.quill-content h1 { font-size: 1.875rem; color: #14532d; }
+.quill-content h2 { font-size: 1.5rem; color: #166534; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; }
+.quill-content h3 { font-size: 1.25rem; color: #15803d; }
+.quill-content h4 { font-size: 1.1rem; }
+
+.quill-content p {
+    margin-bottom: 1.5rem;
+}
+
+.quill-content a {
+    color: #15803d;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.15s ease;
+}
+
+.quill-content a:hover {
+    color: #14532d;
+}
+
+.quill-content strong {
+    color: #111827;
+    font-weight: 700;
+}
+
+.quill-content ul {
+    list-style-type: disc;
+    padding-left: 1.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.quill-content ol {
+    list-style-type: decimal;
+    padding-left: 1.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.quill-content li {
+    margin-bottom: 0.5rem;
+}
+
+.quill-content blockquote {
+    border-left: 4px solid #15803d;
+    background: #f0fdf4;
+    padding: 1.25rem 1.5rem;
+    font-style: italic;
+    color: #166534;
+    border-radius: 0 0.5rem 0.5rem 0;
+    margin: 2rem 0;
+}
+
+.quill-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin: 2rem auto;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* Google Translate Widget Styling - Clean & Subtle */
+.goog-te-gadget-simple {
+    background-color: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 0.5rem !important;
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    color: #374151 !important;
+}
+
+.goog-te-gadget-simple:hover {
+    border-color: #15803d !important;
+}
+
+.goog-te-gadget-icon {
+    display: none !important;
+}
+
+.goog-te-gadget-simple span {
+    color: #374151 !important;
+}
+
+/* Hide Google Translate Banner Bar if loaded */
+.goog-te-banner-frame.skiptranslate {
+    display: none !important;
+}
+
+body {
+    top: 0px !important;
+}

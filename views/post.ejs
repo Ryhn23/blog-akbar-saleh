@@ -1,0 +1,428 @@
+<%- include('partials/header', { 
+    title: post.title, 
+    meta_description: post.meta_description,
+    isArticle: true,
+    ogImage: post.cover_image,
+    canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : null,
+    schemaJsonLd: typeof schemaJsonLd !== 'undefined' ? schemaJsonLd : null
+}) %>
+
+<article class="py-8 sm:py-12 bg-white min-h-[80vh]">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Breadcrumb Navigation & Top Actions -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <nav aria-label="Breadcrumb" class="flex items-center space-x-1.5 text-xs text-gray-500 font-medium overflow-x-auto whitespace-nowrap py-1">
+                <a href="/" class="hover:text-emerald-800 transition">Beranda</a>
+                <span class="text-gray-300">/</span>
+                <a href="/blog" class="hover:text-emerald-800 transition">Arsip Tulisan</a>
+                <span class="text-gray-300">/</span>
+                <a href="/blog?category=<%= encodeURIComponent(post.category || 'Kajian') %>" class="text-emerald-800 font-semibold hover:underline"><%= post.category || 'Kajian' %></a>
+            </nav>
+
+            <!-- Top Actions: Download PDF & Share -->
+            <div class="flex items-center gap-2">
+                <a href="/blog/<%= post.slug %>/pdf" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50/70 text-emerald-900 hover:bg-emerald-100 text-xs font-semibold transition shadow-xs" title="Unduh naskah artikel ini dalam format PDF resmi (Terkunci/Anti-Edit)">
+                    <svg class="w-3.5 h-3.5 text-emerald-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Unduh PDF</span>
+                </a>
+
+                <button onclick="shareArticle()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-200 text-xs font-medium transition shadow-xs" title="Bagikan artikel ini">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                    </svg>
+                    <span>Bagikan</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Article Header -->
+        <header class="mb-8 pb-6 border-b border-gray-100">
+            <div class="flex items-center gap-2 text-xs text-gray-500 font-medium mb-2.5">
+                <a href="/blog?category=<%= encodeURIComponent(post.category || 'Kajian') %>" class="text-emerald-800 font-bold uppercase tracking-wider hover:underline">
+                    <%= post.category || 'Kajian' %>
+                </a>
+                <span>•</span>
+                <span><%= new Date(post.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) %></span>
+                <span>•</span>
+                <span><%= post.reading_time || 1 %> menit baca</span>
+            </div>
+
+            <h1 class="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-gray-900 leading-tight mb-3">
+                <%= post.title %>
+            </h1>
+
+            <% if (post.meta_description) { %>
+                <p class="text-sm sm:text-base text-gray-600 italic font-serif leading-relaxed">
+                    <%= post.meta_description %>
+                </p>
+            <% } %>
+        </header>
+
+        <!-- Cover Image if present -->
+        <% if (post.cover_image) { %>
+            <div class="mb-8 rounded-lg overflow-hidden bg-gray-50 border border-gray-100">
+                <img src="<%= post.cover_image %>" alt="<%= post.title %>" loading="lazy" decoding="async" class="w-full h-auto object-cover max-h-[420px]">
+            </div>
+        <% } %>
+
+        <!-- Article Content -->
+        <div class="quill-content mb-8">
+            <%- post.content %>
+        </div>
+
+        <!-- Document Attachment Card (If Uploaded) -->
+        <% if (post.attachment_url) { %>
+            <div class="mb-10 p-5 rounded-2xl bg-emerald-50/80 border border-emerald-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-11 h-11 rounded-xl bg-emerald-800 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-bold tracking-wider text-emerald-800 uppercase block mb-0.5">Lampiran Dokumen / Makalah</span>
+                        <h4 class="text-sm font-bold text-gray-900 leading-snug"><%= post.attachment_name || 'Dokumen Makalah Riset' %></h4>
+                        <% if (post.attachment_size) { %>
+                            <span class="text-xs text-gray-500 font-medium">Ukuran berkas: <%= (post.attachment_size / (1024 * 1024)).toFixed(2) %> MB</span>
+                        <% } %>
+                    </div>
+                </div>
+                <a href="<%= post.attachment_url %>" download="<%= post.attachment_name || 'dokumen-makalah' %>" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs transition shadow-sm shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    <span>Unduh Dokumen</span>
+                </a>
+            </div>
+        <% } %>
+
+        <!-- Native Share Section (Bottom of Article) -->
+        <div class="mb-12 p-4 sm:p-5 rounded-2xl bg-emerald-50/50 border border-emerald-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="space-y-0.5 text-center sm:text-left">
+                <h3 class="text-xs sm:text-sm font-bold text-emerald-950">Bagikan Kajian / Pemikiran Ini</h3>
+                <p class="text-xs text-gray-600 font-light">Sebarkan tulisan ini ke WhatsApp, Telegram, atau simpan arsip PDF resminya.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="/blog/<%= post.slug %>/pdf" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-emerald-300 text-emerald-900 hover:bg-emerald-50 text-xs font-semibold transition shadow-xs" title="Unduh versi PDF terkunci">
+                    <svg class="w-3.5 h-3.5 text-emerald-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Unduh PDF</span>
+                </a>
+                <button onclick="shareArticle()" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs transition shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                    </svg>
+                    <span>Bagikan Sekarang</span>
+                </button>
+                <button onclick="copyArticleLink()" class="px-3 py-2 rounded-xl border border-emerald-200 bg-white hover:bg-emerald-50 text-emerald-800 font-medium text-xs transition" title="Salin Tautan">
+                    Salin Tautan
+                </button>
+            </div>
+        </div>
+
+        <!-- Related Articles -->
+        <% if (typeof relatedPosts !== 'undefined' && relatedPosts && relatedPosts.length > 0) { %>
+            <div class="pt-8 border-t border-gray-100 mb-12">
+                <span class="text-xs font-bold uppercase tracking-wider text-gray-400 block mb-3">Tulisan Terkait Lainnya</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <% relatedPosts.slice(0, 2).forEach(rel => { %>
+                        <a href="/blog/<%= rel.slug %>" class="p-3 rounded-lg border border-gray-100 bg-gray-50/50 hover:bg-emerald-50/50 hover:border-emerald-200 transition group block">
+                            <span class="text-[11px] text-emerald-800 font-medium block mb-0.5"><%= rel.category %></span>
+                            <h4 class="text-xs sm:text-sm font-serif font-bold text-gray-900 group-hover:text-emerald-800 line-clamp-1">
+                                <%= rel.title %>
+                            </h4>
+                        </a>
+                    <% }) %>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Discussion & Comments Section -->
+        <section id="comments" class="pt-8 border-t border-gray-100 mb-8">
+            
+            <!-- Comment Section Header & Sorting Tabs -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 mb-6 border-b border-gray-100">
+                <h3 class="text-lg font-serif font-bold text-gray-900 flex items-center gap-2">
+                    <span>Tanggapan & Diskusi</span>
+                    <span class="text-xs font-sans px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold border border-emerald-200">
+                        <%= (typeof totalCommentCount !== 'undefined') ? totalCommentCount : (comments ? comments.length : 0) %>
+                    </span>
+                </h3>
+
+                <!-- Sorting Tabs: Paling Relevan | Terbaru | Terlama -->
+                <div class="flex items-center gap-1.5 text-xs bg-gray-50 p-1 rounded-lg border border-gray-200">
+                    <span class="text-[11px] text-gray-400 px-2 font-medium">Urutan:</span>
+                    <a href="/blog/<%= post.slug %>?sort=relevant#comments" class="px-2.5 py-1 rounded-md transition font-semibold <%= (typeof currentSort === 'undefined' || currentSort === 'relevant') ? 'bg-white text-emerald-900 shadow-xs border border-gray-200' : 'text-gray-600 hover:text-emerald-800' %>">
+                        Paling Relevan
+                    </a>
+                    <a href="/blog/<%= post.slug %>?sort=newest#comments" class="px-2.5 py-1 rounded-md transition font-semibold <%= (typeof currentSort !== 'undefined' && currentSort === 'newest') ? 'bg-white text-emerald-900 shadow-xs border border-gray-200' : 'text-gray-600 hover:text-emerald-800' %>">
+                        Terbaru
+                    </a>
+                    <a href="/blog/<%= post.slug %>?sort=oldest#comments" class="px-2.5 py-1 rounded-md transition font-semibold <%= (typeof currentSort !== 'undefined' && currentSort === 'oldest') ? 'bg-white text-emerald-900 shadow-xs border border-gray-200' : 'text-gray-600 hover:text-emerald-800' %>">
+                        Terlama
+                    </a>
+                </div>
+            </div>
+
+            <!-- Root Comment Input Area -->
+            <div class="mb-8">
+                <% if (typeof readerUser !== 'undefined' && readerUser) { %>
+                    <!-- Signed-in Reader Form -->
+                    <form action="/blog/<%= post.slug %>/comments" method="POST" class="bg-gray-50/80 p-4 sm:p-5 rounded-2xl border border-gray-200 space-y-3 shadow-xs">
+                        <div class="flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-2.5">
+                                <% if (readerUser.avatar) { %>
+                                    <img src="<%= readerUser.avatar %>" alt="<%= readerUser.name %>" class="w-7 h-7 rounded-full border border-gray-200 object-cover" referrerpolicy="no-referrer">
+                                <% } else { %>
+                                    <div class="w-7 h-7 rounded-full bg-emerald-800 text-white flex items-center justify-center font-bold text-xs">
+                                        <%= readerUser.name.charAt(0).toUpperCase() %>
+                                    </div>
+                                <% } %>
+                                <div>
+                                    <span class="font-bold text-gray-900 block leading-tight"><%= readerUser.name %></span>
+                                    <span class="text-[11px] text-emerald-700 font-medium">Terverifikasi Akun Google</span>
+                                </div>
+                            </div>
+                            <a href="/auth/logout?returnTo=/blog/<%= post.slug %>" class="text-xs text-gray-400 hover:text-red-600 transition">Keluar</a>
+                        </div>
+
+                        <div>
+                            <textarea name="content" required rows="3" placeholder="Tuliskan pandangan atau tanggapan ilmiah Anda..." class="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs leading-relaxed focus:ring-1 focus:ring-emerald-700 focus:border-emerald-700 placeholder-gray-400 resize-y"></textarea>
+                        </div>
+
+                        <div class="flex justify-end">
+                            <button type="submit" class="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-semibold rounded-lg text-xs transition shadow-sm">
+                                Kirim Tanggapan
+                            </button>
+                        </div>
+                    </form>
+                <% } else { %>
+                    <!-- Sign-in with Google Prompt -->
+                    <div class="p-6 rounded-2xl bg-gray-50/80 border border-gray-200 text-center space-y-3">
+                        <p class="text-xs text-gray-600 max-w-md mx-auto leading-relaxed font-light">
+                            Untuk menjaga adab diskusi dan mencegah spam, silakan masuk menggunakan akun Google Anda sebelum menulis atau membalas tanggapan.
+                        </p>
+                        <div>
+                            <a href="/auth/google?returnTo=/blog/<%= post.slug %>" class="inline-flex items-center gap-2.5 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-xl text-xs font-semibold shadow-sm transition">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24">
+                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                                </svg>
+                                <span>Masuk dengan Google untuk Berkomentar</span>
+                            </a>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+
+            <!-- Comments & Replies Tree -->
+            <div class="space-y-5">
+                <% if (typeof comments !== 'undefined' && comments && comments.length > 0) { %>
+                    <% comments.forEach(comment => { %>
+                        <div id="comment-<%= comment.id %>" class="p-4 sm:p-5 rounded-2xl shadow-xs space-y-3 <%= comment.is_author ? 'bg-emerald-50/50 border border-emerald-200 ring-1 ring-emerald-500/20' : 'bg-white border border-gray-200' %>">
+                            
+                            <!-- Comment Header (Avatar, Name, Verified Badge, Date + Time) -->
+                            <div class="flex items-center justify-between text-xs">
+                                <div class="flex items-center gap-2.5">
+                                    <% if (comment.user_avatar) { %>
+                                        <img src="<%= comment.user_avatar %>" alt="<%= comment.user_name %>" class="w-7 h-7 rounded-full object-cover <%= comment.is_author ? 'ring-2 ring-emerald-700 ring-offset-1 border-0' : 'border border-gray-200' %>" referrerpolicy="no-referrer">
+                                    <% } else { %>
+                                        <div class="w-7 h-7 rounded-full text-white flex items-center justify-center font-bold text-xs <%= comment.is_author ? 'bg-emerald-900 ring-2 ring-emerald-700 ring-offset-1' : 'bg-emerald-100 text-emerald-800' %>">
+                                            <%= comment.user_name.charAt(0).toUpperCase() %>
+                                        </div>
+                                    <% } %>
+                                    <div>
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <span class="font-bold <%= comment.is_author ? 'text-emerald-950' : 'text-gray-900' %>"><%= comment.user_name %></span>
+                                            <% if (comment.is_author) { %>
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-800 text-white text-[10px] font-bold shadow-xs">
+                                                    <svg class="w-2.5 h-2.5 text-emerald-200" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                                    </svg>
+                                                    <span>Penulis Asli</span>
+                                                </span>
+                                            <% } %>
+                                        </div>
+                                        <time datetime="<%= comment.created_at %>" class="text-gray-400 text-[11px]">
+                                            <%= new Date(comment.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) %>, <%= new Date(comment.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) %> WIB
+                                        </time>
+                                    </div>
+                                </div>
+
+                                <!-- Reply Trigger Button -->
+                                <button onclick="toggleReplyBox('<%= comment.id %>')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-emerald-800 hover:bg-emerald-50 transition">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                    </svg>
+                                    <span>Balas</span>
+                                </button>
+                            </div>
+
+                            <!-- Comment Content -->
+                            <div class="text-xs sm:text-sm text-gray-700 leading-relaxed pl-9">
+                                <%- comment.content %>
+                            </div>
+
+                            <!-- Inline Reply Form (Hidden by default) -->
+                            <div id="reply-box-<%= comment.id %>" class="hidden pl-9 pt-2">
+                                <% if (typeof readerUser !== 'undefined' && readerUser) { %>
+                                    <form action="/blog/<%= post.slug %>/comments" method="POST" class="bg-gray-50 p-3.5 rounded-xl border border-gray-200 space-y-2.5">
+                                        <input type="hidden" name="parent_id" value="<%= comment.id %>">
+                                        <div class="flex items-center justify-between text-xs text-gray-500 font-medium">
+                                            <span>Membalas tanggapan dari <strong class="text-gray-800"><%= comment.user_name %></strong></span>
+                                            <button type="button" onclick="toggleReplyBox('<%= comment.id %>')" class="text-gray-400 hover:text-gray-700">Tutup</button>
+                                        </div>
+                                        <textarea name="content" required rows="2" placeholder="Tulis balasan Anda..." class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs leading-relaxed focus:ring-1 focus:ring-emerald-700 focus:border-emerald-700 resize-y"></textarea>
+                                        <div class="flex justify-end gap-2">
+                                            <button type="button" onclick="toggleReplyBox('<%= comment.id %>')" class="px-3 py-1.5 border border-gray-300 bg-white text-gray-600 rounded-lg text-xs">Batal</button>
+                                            <button type="submit" class="px-3.5 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-semibold rounded-lg text-xs transition">Kirim Balasan</button>
+                                        </div>
+                                    </form>
+                                <% } else { %>
+                                    <div class="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100 text-xs text-gray-600 flex items-center justify-between gap-3">
+                                        <span>Masuk dengan Google untuk membalas komentar ini.</span>
+                                        <a href="/auth/google?returnTo=/blog/<%= post.slug %>" class="px-3 py-1.5 bg-emerald-800 text-white font-semibold rounded-lg text-[11px] whitespace-nowrap hover:bg-emerald-900 transition">
+                                            Masuk Google
+                                        </a>
+                                    </div>
+                                <% } %>
+                            </div>
+
+                            <!-- Nested Replies List -->
+                            <% if (comment.replies && comment.replies.length > 0) { %>
+                                <div class="pl-6 sm:pl-9 pt-2">
+                                    <div class="border-l-2 border-emerald-200 pl-3 sm:pl-4 space-y-3">
+                                        <% comment.replies.forEach(reply => { %>
+                                            <div id="comment-<%= reply.id %>" class="p-3 sm:p-3.5 rounded-xl space-y-1.5 <%= reply.is_author ? 'bg-emerald-50/70 border border-emerald-200 ring-1 ring-emerald-500/20' : 'bg-gray-50/80 border border-gray-100' %>">
+                                                <div class="flex items-center justify-between text-xs">
+                                                    <div class="flex items-center gap-2">
+                                                        <% if (reply.user_avatar) { %>
+                                                            <img src="<%= reply.user_avatar %>" alt="<%= reply.user_name %>" class="w-5 h-5 rounded-full object-cover <%= reply.is_author ? 'ring-1.5 ring-emerald-700 ring-offset-1' : 'border border-gray-200' %>" referrerpolicy="no-referrer">
+                                                        <% } else { %>
+                                                            <div class="w-5 h-5 rounded-full text-white flex items-center justify-center font-bold text-[9px] <%= reply.is_author ? 'bg-emerald-900 ring-1.5 ring-emerald-700 ring-offset-1' : 'bg-emerald-700' %>">
+                                                                <%= reply.user_name.charAt(0).toUpperCase() %>
+                                                            </div>
+                                                        <% } %>
+                                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                                            <span class="font-bold <%= reply.is_author ? 'text-emerald-950' : 'text-gray-900' %>"><%= reply.user_name %></span>
+                                                            <% if (reply.is_author) { %>
+                                                                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full bg-emerald-800 text-white text-[9px] font-bold shadow-xs">
+                                                                    <svg class="w-2 h-2 text-emerald-200" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                                                    </svg>
+                                                                    <span>Penulis Asli</span>
+                                                                </span>
+                                                            <% } %>
+                                                        </div>
+                                                    </div>
+                                                    <time datetime="<%= reply.created_at %>" class="text-gray-400 text-[10px]">
+                                                        <%= new Date(reply.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) %>, <%= new Date(reply.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) %> WIB
+                                                    </time>
+                                                </div>
+                                                <div class="text-xs text-gray-700 leading-relaxed pl-7">
+                                                    <%- reply.content %>
+                                                </div>
+                                            </div>
+                                        <% }) %>
+                                    </div>
+                                </div>
+                            <% } %>
+
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <div class="text-center py-8 text-gray-400 text-xs bg-gray-50/60 rounded-xl border border-dashed border-gray-200">
+                        Belum ada tanggapan untuk artikel ini. Jadilah yang pertama memulai diskusi.
+                    </div>
+                <% } %>
+            </div>
+        </section>
+
+        <!-- Bottom Navigation -->
+        <div class="pt-6 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+            <a href="/blog" class="hover:text-emerald-800 font-semibold transition">
+                ← Kembali ke Semua Arsip
+            </a>
+            <a href="#top" class="hover:text-emerald-800 transition">
+                Kembali ke Atas ↑
+            </a>
+        </div>
+
+    </div>
+</article>
+
+<!-- Toast Notification Element -->
+<div id="toastNotification" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-xl shadow-lg text-xs font-medium border border-gray-700">
+        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        <span id="toastMessage">Tautan artikel berhasil disalin!</span>
+    </div>
+</div>
+
+<script>
+    // Native Web Share API (Android, iOS & Modern Browsers)
+    async function shareArticle() {
+        const metaDesc = document.querySelector('meta[name="description"]');
+        const shareData = {
+            title: document.title,
+            text: metaDesc ? metaDesc.getAttribute('content') : document.title,
+            url: window.location.href.split('#')[0]
+        };
+
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    copyArticleLink();
+                }
+            }
+        } else {
+            copyArticleLink();
+        }
+    }
+
+    // Fallback: Copy Link with Toast
+    async function copyArticleLink() {
+        const cleanUrl = window.location.href.split('#')[0];
+        try {
+            await navigator.clipboard.writeText(cleanUrl);
+            showToast('Tautan artikel berhasil disalin ke papan klip!');
+        } catch (e) {
+            prompt('Salin tautan artikel berikut:', cleanUrl);
+        }
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('toastNotification');
+        const text = document.getElementById('toastMessage');
+        if (!toast || !text) return;
+        text.innerText = msg;
+        toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+        setTimeout(() => {
+            toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+        }, 3000);
+    }
+
+    // Toggle Reply Box Function
+    function toggleReplyBox(commentId) {
+        const box = document.getElementById(`reply-box-${commentId}`);
+        if (box) {
+            box.classList.toggle('hidden');
+            if (!box.classList.contains('hidden')) {
+                const textarea = box.querySelector('textarea');
+                if (textarea) textarea.focus();
+            }
+        }
+    }
+</script>
+
+<%- include('partials/footer') %>

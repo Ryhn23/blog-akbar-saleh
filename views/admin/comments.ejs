@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moderasi Komentar | <%= siteName %> Admin</title>
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png">
+    <link rel="icon" href="/favicon/favicon.ico" type="image/x-icon">
+    <link rel="manifest" href="/favicon/site.webmanifest">
+    <link rel="stylesheet" href="/css/output.css?v=4">
+</head>
+<body class="bg-gray-50 font-sans min-h-screen flex flex-col text-gray-800">
+    
+    <!-- Admin Topbar -->
+    <nav class="bg-emerald-900 text-white shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <span class="font-serif font-bold text-base"><%= siteName %></span>
+                    <span class="text-xs text-emerald-300 font-light">• Komentar</span>
+                </div>
+                <div class="flex items-center gap-4 text-xs font-medium">
+                    <a href="/admin" class="text-emerald-100 hover:text-white transition">Artikel</a>
+                    <a href="/admin/categories" class="text-emerald-100 hover:text-white transition">Kategori</a>
+                    <a href="/admin/comments" class="text-white font-bold underline transition">Komentar</a>
+                    <a href="/admin/about" class="text-emerald-100 hover:text-white transition">Tentang</a>
+                    <a href="/admin/settings" class="text-emerald-100 hover:text-white transition">Pengaturan</a>
+                    <a href="/" target="_blank" class="text-emerald-100 hover:text-white transition">Lihat Blog ↗</a>
+                    <a href="/admin/logout" class="bg-emerald-950 text-emerald-200 px-3 py-1.5 rounded hover:bg-black transition">Keluar</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <!-- Header & Stats -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+                <h1 class="text-xl sm:text-2xl font-serif font-bold text-gray-900">Moderasi Komentar Pembaca</h1>
+                <p class="text-xs text-gray-500 mt-0.5">Kelola tanggapan pembaca yang masuk melalui otentikasi Google.</p>
+            </div>
+            
+            <div class="flex items-center gap-2 text-xs">
+                <a href="/admin/comments" class="px-3 py-1.5 rounded-lg border font-semibold <%= currentFilter === 'all' ? 'bg-emerald-800 text-white border-emerald-800' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' %>">
+                    Semua (<%= totalComments %>)
+                </a>
+                <a href="/admin/comments?status=approved" class="px-3 py-1.5 rounded-lg border font-semibold <%= currentFilter === 'approved' ? 'bg-emerald-800 text-white border-emerald-800' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' %>">
+                    Disetujui (<%= approvedCount %>)
+                </a>
+                <a href="/admin/comments?status=hidden" class="px-3 py-1.5 rounded-lg border font-semibold <%= currentFilter === 'hidden' ? 'bg-emerald-800 text-white border-emerald-800' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' %>">
+                    Disembunyikan (<%= hiddenCount %>)
+                </a>
+            </div>
+        </div>
+
+        <!-- Comments Table -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <% if (comments && comments.length > 0) { %>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 uppercase font-semibold">
+                                <th class="p-3.5">Komentator</th>
+                                <th class="p-3.5">Artikel Terkait</th>
+                                <th class="p-3.5">Isi Komentar</th>
+                                <th class="p-3.5">Tanggal</th>
+                                <th class="p-3.5">Status</th>
+                                <th class="p-3.5 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <% comments.forEach(comment => { %>
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="p-3.5 whitespace-nowrap">
+                                        <div class="flex items-center gap-2.5">
+                                            <% if (comment.user_avatar) { %>
+                                                <img src="<%= comment.user_avatar %>" alt="<%= comment.user_name %>" class="w-7 h-7 rounded-full border border-gray-200 object-cover" referrerpolicy="no-referrer">
+                                            <% } else { %>
+                                                <div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs">
+                                                    <%= comment.user_name.charAt(0).toUpperCase() %>
+                                                </div>
+                                            <% } %>
+                                            <div>
+                                                <div class="font-semibold text-gray-900"><%= comment.user_name %></div>
+                                                <div class="text-[11px] text-gray-400 font-mono"><%= comment.user_email %></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="p-3.5 max-w-[200px] truncate">
+                                        <a href="/blog/<%= comment.post_slug %>#comments" target="_blank" class="text-emerald-800 hover:underline font-medium">
+                                            <%= comment.post_title %> ↗
+                                        </a>
+                                    </td>
+                                    <td class="p-3.5 max-w-sm">
+                                        <p class="text-gray-700 leading-relaxed line-clamp-3">
+                                            <%= comment.content %>
+                                        </p>
+                                    </td>
+                                    <td class="p-3.5 whitespace-nowrap text-gray-500 text-[11px]">
+                                        <%= new Date(comment.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) %>
+                                    </td>
+                                    <td class="p-3.5 whitespace-nowrap">
+                                        <% if (comment.status === 'approved') { %>
+                                            <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200">
+                                                Aktif
+                                            </span>
+                                        <% } else { %>
+                                            <span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-bold border border-amber-200">
+                                                Disembunyikan
+                                            </span>
+                                        <% } %>
+                                    </td>
+                                    <td class="p-3.5 text-right whitespace-nowrap space-x-2">
+                                        <!-- Toggle Status Form -->
+                                        <form action="/admin/comments/<%= comment.id %>/status" method="POST" class="inline-block">
+                                            <input type="hidden" name="status" value="<%= comment.status === 'approved' ? 'hidden' : 'approved' %>">
+                                            <button type="submit" class="text-xs font-semibold <%= comment.status === 'approved' ? 'text-amber-700 hover:underline' : 'text-emerald-700 hover:underline' %>">
+                                                <%= comment.status === 'approved' ? 'Sembunyikan' : 'Tampilkan' %>
+                                            </button>
+                                        </form>
+
+                                        <!-- Delete Form -->
+                                        <form action="/admin/comments/<%= comment.id %>/delete" method="POST" class="inline-block" onsubmit="return confirm('Hapus permanen komentar dari <%= comment.user_name %>?');">
+                                            <button type="submit" class="text-xs text-red-600 hover:underline">
+                                                Hapus
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } else { %>
+                <div class="p-12 text-center text-gray-400">
+                    <p class="text-sm">Belum ada komentar pembaca yang masuk.</p>
+                </div>
+            <% } %>
+        </div>
+
+    </main>
+</body>
+</html>

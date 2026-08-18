@@ -1,0 +1,41 @@
+<%- include('partials/header', { 
+    title: page ? page.title : 'Tentang Penulis',
+    canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : null,
+    schemaJsonLd: typeof schemaJsonLd !== 'undefined' ? schemaJsonLd : null
+}) %>
+
+<section class="py-10 sm:py-14 bg-white min-h-[80vh]">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header Profile -->
+        <header class="border-b border-gray-100 pb-6 mb-8">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-800 block mb-2">Profil Penulis</span>
+            <h1 class="text-3xl sm:text-4xl font-serif font-bold text-gray-900 tracking-tight mb-2">
+                <%= (page && page.title) ? page.title : authorName %>
+            </h1>
+            <% if (page && page.subtitle) { %>
+                <p class="text-sm sm:text-base text-gray-600 font-medium font-serif">
+                    <%= page.subtitle %>
+                </p>
+            <% } else { %>
+                <p class="text-sm sm:text-base text-gray-600 font-medium">
+                    <%= authorRole %>
+                </p>
+            <% } %>
+        </header>
+
+        <!-- Dynamic Content from Quill Editor -->
+        <div class="quill-content mb-12">
+            <%- (page && page.content) ? page.content : '<p>Belum ada isi profil.</p>' %>
+        </div>
+
+        <!-- Contact & Location Box -->
+        <div class="pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-2">
+            <span>Kontak Resmi: <a href="mailto:<%= authorEmail %>" class="text-emerald-800 font-semibold hover:underline"><%= authorEmail %></a></span>
+            <span><%= authorLocation || 'Jakarta, Indonesia' %></span>
+        </div>
+
+    </div>
+</section>
+
+<%- include('partials/footer') %>

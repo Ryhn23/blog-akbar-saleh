@@ -1,0 +1,27 @@
+services:
+  blog:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blog-akbar-saleh
+    restart: unless-stopped
+    ports:
+      - "${PORT:-7842}:${PORT:-7842}"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - PORT=${PORT:-7842}
+      - DATABASE_PATH=/app/data/database.sqlite
+      - TRUST_PROXY=true
+    volumes:
+      # Persistent SQLite storage
+      - ./data:/app/data
+      # Persistent User Uploads
+      - ./public/uploads:/app/public/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7842/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= typeof title !== 'undefined' && title ? title + ' — ' + siteName : siteName + ' — ' + siteTagline %></title>
+    <meta name="description" content="<%= typeof meta_description !== 'undefined' && meta_description ? meta_description : siteDescription %>">
+    <meta name="author" content="<%= authorName %>">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="<%= typeof canonicalUrl !== 'undefined' && canonicalUrl ? canonicalUrl : (appUrl + (typeof currentPath !== 'undefined' ? currentPath : '')) %>">
+
+    <!-- RSS Feed Auto-Discovery -->
+    <link rel="alternate" type="application/rss+xml" title="RSS Feed <%= siteName %>" href="/rss.xml">
+
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png">
+    <link rel="icon" href="/favicon/favicon.ico" type="image/x-icon">
+    <link rel="manifest" href="/favicon/site.webmanifest">
+    
+    <!-- OpenGraph Meta Tags -->
+    <meta property="og:locale" content="id_ID">
+    <meta property="og:site_name" content="<%= siteName %>">
+    <meta property="og:type" content="<%= typeof isArticle !== 'undefined' && isArticle ? 'article' : 'website' %>">
+    <meta property="og:title" content="<%= typeof title !== 'undefined' && title ? title + ' — ' + siteName : siteName + ' — ' + siteTagline %>">
+    <meta property="og:description" content="<%= typeof meta_description !== 'undefined' && meta_description ? meta_description : siteDescription %>">
+    <meta property="og:url" content="<%= typeof canonicalUrl !== 'undefined' && canonicalUrl ? canonicalUrl : (appUrl + (typeof currentPath !== 'undefined' ? currentPath : '')) %>">
+    <% if (typeof ogImage !== 'undefined' && ogImage) { %>
+    <meta property="og:image" content="<%= ogImage.startsWith('http') ? ogImage : appUrl + ogImage %>">
+    <% } else { %>
+    <meta property="og:image" content="<%= appUrl %>/favicon/android-chrome-512x512.png">
+    <% } %>
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<%= typeof title !== 'undefined' && title ? title + ' — ' + siteName : siteName + ' — ' + siteTagline %>">
+    <meta name="twitter:description" content="<%= typeof meta_description !== 'undefined' && meta_description ? meta_description : siteDescription %>">
+    <% if (typeof ogImage !== 'undefined' && ogImage) { %>
+    <meta name="twitter:image" content="<%= ogImage.startsWith('http') ? ogImage : appUrl + ogImage %>">
+    <% } else { %>
+    <meta name="twitter:image" content="<%= appUrl %>/favicon/android-chrome-512x512.png">
+    <% } %>
+
+    <!-- Schema.org JSON-LD Structured Data -->
+    <% if (typeof schemaJsonLd !== 'undefined' && schemaJsonLd) { %>
+    <script type="application/ld+json">
+        <%- JSON.stringify(schemaJsonLd) %>
+    </script>
+    <% } %>
+
+    <link rel="stylesheet" href="/css/output.css?v=4">
+</head>
+<body class="bg-white text-gray-800 antialiased selection:bg-emerald-700 selection:text-white min-h-screen flex flex-col font-sans">
+    
+    <!-- Header / Navbar: Clean Green & White -->
+    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100 transition-all duration-200">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                
+                <!-- Brand Title -->
+                <a href="/" class="group flex flex-col">
+                    <span class="font-serif font-bold text-xl sm:text-2xl text-emerald-900 tracking-tight group-hover:text-emerald-700 transition-colors">
+                        <%= siteName %>
+                    </span>
+                    <span class="text-xs text-gray-500 font-medium tracking-wide">
+                        <%= authorRole %>
+                    </span>
+                </a>
+
+                <!-- Desktop Navigation Links & Language Switcher -->
+                <nav class="hidden sm:flex items-center space-x-6">
+                    <a href="/" class="text-sm font-medium transition-colors <%= currentPath === '/' ? 'text-emerald-800 font-semibold border-b-2 border-emerald-700 pb-0.5' : 'text-gray-600 hover:text-emerald-800' %>">
+                        Beranda
+                    </a>
+                    <a href="/blog" class="text-sm font-medium transition-colors <%= currentPath.startsWith('/blog') ? 'text-emerald-800 font-semibold border-b-2 border-emerald-700 pb-0.5' : 'text-gray-600 hover:text-emerald-800' %>">
+                        Kajian & Tulisan
+                    </a>
+                    <a href="/about" class="text-sm font-medium transition-colors <%= currentPath === '/about' ? 'text-emerald-800 font-semibold border-b-2 border-emerald-700 pb-0.5' : 'text-gray-600 hover:text-emerald-800' %>">
+                        Tentang
+                    </a>
+
+                    <!-- Draft Multi-Language / Auto Translate Switcher -->
+                    <div class="relative inline-block text-left" id="lang-container">
+                        <div id="google_translate_element" class="inline-block text-xs"></div>
+                    </div>
+
+                    <% if (isLoggedIn) { %>
+                        <a href="/admin" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-800 text-white hover:bg-emerald-900 transition">
+                            Dasbor
+                        </a>
+                    <% } %>
+                </nav>
+
+                <!-- Mobile Menu Button -->
+                <div class="flex items-center sm:hidden gap-3">
+                    <div id="google_translate_element_mobile" class="inline-block text-xs"></div>
+                    <button type="button" class="p-2 rounded-lg text-gray-600 hover:text-emerald-800 hover:bg-emerald-50 focus:outline-none" aria-label="Toggle menu" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Dropdown -->
+        <div class="sm:hidden hidden bg-white border-b border-gray-100 px-4 pt-2 pb-4 space-y-2" id="mobile-menu">
+            <a href="/" class="block px-3 py-2 rounded-lg text-sm font-medium <%= currentPath === '/' ? 'text-emerald-800 bg-emerald-50 font-bold' : 'text-gray-700 hover:bg-gray-50' %>">Beranda</a>
+            <a href="/blog" class="block px-3 py-2 rounded-lg text-sm font-medium <%= currentPath.startsWith('/blog') ? 'text-emerald-800 bg-emerald-50 font-bold' : 'text-gray-700 hover:bg-gray-50' %>">Kajian & Tulisan</a>
+            <a href="/about" class="block px-3 py-2 rounded-lg text-sm font-medium <%= currentPath === '/about' ? 'text-emerald-800 bg-emerald-50 font-bold' : 'text-gray-700 hover:bg-gray-50' %>">Tentang</a>
+            <% if (isLoggedIn) { %>
+                <a href="/admin" class="block px-3 py-2 rounded-lg text-sm font-semibold text-emerald-800 bg-emerald-100">Dasbor Admin</a>
+            <% } %>
+        </div>
+    </header>
+
+    <!-- Main Body Container -->
+    <main class="flex-grow">

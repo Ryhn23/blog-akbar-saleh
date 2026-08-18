@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dasbor Admin | <%= siteName %></title>
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png">
+    <link rel="icon" href="/favicon/favicon.ico" type="image/x-icon">
+    <link rel="manifest" href="/favicon/site.webmanifest">
+    <link rel="stylesheet" href="/css/output.css?v=4">
+</head>
+<body class="bg-gray-50 font-sans min-h-screen flex flex-col text-gray-800">
+    
+    <!-- Admin Topbar (Clean Emerald Green) -->
+    <nav class="bg-emerald-900 text-white shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <span class="font-serif font-bold text-base"><%= siteName %></span>
+                    <span class="text-xs text-emerald-300 font-light">• Dasbor Pengelola</span>
+                </div>
+                <div class="flex items-center gap-4 text-xs font-medium">
+                    <a href="/admin" class="text-white font-bold underline transition">Artikel</a>
+                    <a href="/admin/categories" class="text-emerald-100 hover:text-white transition">Kategori</a>
+                    <a href="/admin/comments" class="text-emerald-100 hover:text-white transition">Komentar</a>
+                    <a href="/admin/about" class="text-emerald-100 hover:text-white transition">Tentang</a>
+                    <a href="/admin/settings" class="text-emerald-100 hover:text-white transition">Pengaturan</a>
+                    <a href="/" target="_blank" class="text-emerald-100 hover:text-white transition">Lihat Blog ↗</a>
+                    <a href="/admin/logout" class="bg-emerald-950 text-emerald-200 px-3 py-1.5 rounded hover:bg-black transition">Keluar</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <!-- Header & Action -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+                <h1 class="text-xl sm:text-2xl font-serif font-bold text-gray-900">Kelola Kajian & Tulisan</h1>
+                <p class="text-xs text-gray-500 mt-0.5">Total <%= totalPosts %> artikel telah dipublikasikan.</p>
+            </div>
+            <a href="/admin/posts/new" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-800 text-white text-xs font-semibold hover:bg-emerald-900 transition">
+                + Tulis Artikel Baru
+            </a>
+        </div>
+
+        <!-- Table Container -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-3 bg-gray-50/50">
+                <span class="text-xs font-semibold text-gray-600">Daftar Artikel</span>
+                <form action="/admin" method="GET" class="w-full sm:w-64">
+                    <input type="text" name="q" value="<%= searchQuery %>" placeholder="Cari judul..." class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded text-xs focus:ring-1 focus:ring-emerald-700">
+                </form>
+            </div>
+            
+            <% if (posts.length > 0) { %>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs uppercase font-semibold">
+                                <th class="p-3.5">Judul</th>
+                                <th class="p-3.5">Kategori</th>
+                                <th class="p-3.5">Tanggal</th>
+                                <th class="p-3.5 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 text-xs">
+                            <% posts.forEach(post => { %>
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="p-3.5">
+                                        <div class="font-semibold text-gray-900 mb-0.5">
+                                            <%= post.title %>
+                                            <% if (post.is_featured) { %>
+                                                <span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Utama</span>
+                                            <% } %>
+                                        </div>
+                                        <div class="text-gray-400">/blog/<%= post.slug %></div>
+                                    </td>
+                                    <td class="p-3.5">
+                                        <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-medium">
+                                            <%= post.category || 'Umum' %>
+                                        </span>
+                                    </td>
+                                    <td class="p-3.5 text-gray-500 whitespace-nowrap">
+                                        <%= new Date(post.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+                                    </td>
+                                    <td class="p-3.5 text-right space-x-2 whitespace-nowrap">
+                                        <a href="/blog/<%= post.slug %>" target="_blank" class="text-gray-500 hover:text-gray-900">Lihat</a>
+                                        <span class="text-gray-300">|</span>
+                                        <a href="/admin/posts/<%= post.id %>/edit" class="text-emerald-800 hover:underline font-semibold">Edit</a>
+                                        <span class="text-gray-300">|</span>
+                                        <form action="/admin/posts/<%= post.id %>/delete" method="POST" class="inline-block" onsubmit="return confirm('Hapus artikel ini?');">
+                                            <button type="submit" class="text-red-600 hover:underline">Hapus</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } else { %>
+                <div class="p-8 text-center text-gray-400 text-xs">
+                    Belum ada tulisan. Silakan buat artikel pertama Anda.
+                </div>
+            <% } %>
+        </div>
+    </main>
+</body>
+</html>
