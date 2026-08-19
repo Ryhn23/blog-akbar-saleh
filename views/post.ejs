@@ -65,21 +65,6 @@
                         </div>
                     </div>
 
-                    <% if (typeof isTranslated !== 'undefined' && isTranslated) { %>
-                        <!-- AI Translation Active Notice -->
-                        <div class="mb-6 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 shadow-2xs">
-                            <div class="flex items-center gap-2 text-emerald-950">
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-800 text-white font-bold text-[10px]">
-                                    AI Translation
-                                </span>
-                                <span><%= t('ai_translation_badge') %> <%= t('to_language') %> <strong><%= langConfig ? langConfig.name : targetLang.toUpperCase() %></strong>.</span>
-                            </div>
-                            <a href="/blog/<%= originalPost.slug %>" class="text-emerald-800 hover:text-emerald-950 font-semibold underline text-[11px] shrink-0">
-                                <%= t('read_original_id') %>
-                            </a>
-                        </div>
-                    <% } %>
-
                     <!-- Article Header -->
                     <header class="mb-8 pb-6 border-b border-gray-100" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
                         <div class="flex items-center gap-2 text-xs text-gray-500 font-medium mb-2.5">
