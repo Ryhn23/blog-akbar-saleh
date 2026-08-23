@@ -43,9 +43,9 @@
                         <!-- Top Actions: Download PDF & Share -->
                         <div class="flex items-center gap-2">
                             <a href="/blog/<%= (typeof originalPost !== 'undefined' && originalPost) ? originalPost.slug : post.slug %>/pdf<%= (typeof targetLang !== 'undefined' && targetLang !== 'id') ? '?lang=' + targetLang : '' %>" target="_blank"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50/70 text-emerald-900 hover:bg-emerald-100 text-xs font-semibold transition shadow-xs"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/30 bg-[#0c2a38] text-amber-200 hover:bg-[#13384c] text-xs font-bold transition shadow-xs"
                                 title="<%= t('download_pdf') %>">
-                                <svg class="w-3.5 h-3.5 text-emerald-800" fill="none" stroke="currentColor"
+                                <svg class="w-3.5 h-3.5 text-amber-300" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -54,7 +54,7 @@
                             </a>
 
                             <button onclick="shareArticle()"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-200 text-xs font-medium transition shadow-xs cursor-pointer"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-[#0c2a38] hover:text-amber-200 hover:border-[#0c2a38] text-xs font-semibold transition shadow-xs cursor-pointer"
                                 title="<%= t('share') %>">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -67,9 +67,9 @@
 
                     <!-- Article Header -->
                     <header class="mb-8 pb-6 border-b border-gray-100" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
-                        <div class="flex items-center gap-2 text-xs text-gray-500 font-medium mb-2.5">
+                        <div class="flex items-center gap-2 text-xs text-gray-500 font-medium mb-3">
                             <a href="/blog?category=<%= encodeURIComponent(post.category || 'Kajian') %><%= (typeof targetLang !== 'undefined' && targetLang !== 'id') ? '&lang=' + targetLang : '' %>"
-                                class="text-emerald-800 font-bold uppercase tracking-wider hover:underline">
+                                class="px-2.5 py-0.5 rounded-md bg-[#0c2a38] text-amber-200 border border-amber-500/20 font-bold uppercase tracking-wider text-[10px] hover:brightness-110">
                                 <%= post.category || 'Kajian' %>
                             </a>
                             <span>•</span>
@@ -96,7 +96,7 @@
 
                     <!-- Cover Image if present -->
                     <% if (post.cover_image) { %>
-                        <div class="mb-8 rounded-lg overflow-hidden bg-gray-50 border border-gray-100">
+                        <div class="mb-8 rounded-2xl overflow-hidden bg-gray-50 border border-gray-200/80 shadow-xs">
                             <img src="<%= post.cover_image %>" alt="<%= post.title %>" loading="lazy" decoding="async"
                                 class="w-full h-auto object-cover max-h-[420px]">
                         </div>
@@ -110,10 +110,10 @@
                     <!-- Document Attachment Card (If Uploaded) -->
                     <% if (post.attachment_url) { %>
                         <div
-                            class="mb-10 p-5 rounded-2xl bg-emerald-50/80 border border-emerald-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
+                            class="mb-10 p-5 rounded-2xl bg-gradient-to-r from-[#0c2a38] to-[#071c26] text-white border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
                             <div class="flex items-center gap-3.5">
                                 <div
-                                    class="w-11 h-11 rounded-xl bg-emerald-800 text-white flex items-center justify-center shrink-0 shadow-sm">
+                                    class="w-11 h-11 rounded-xl bg-black/40 text-amber-300 border border-amber-500/30 flex items-center justify-center shrink-0 shadow-sm">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -121,19 +121,19 @@
                                 </div>
                                 <div>
                                     <span
-                                        class="text-[11px] font-bold tracking-wider text-emerald-800 uppercase block mb-0.5"><%= t('attachment_label') %></span>
-                                    <h4 class="text-sm font-bold text-gray-900 leading-snug">
+                                        class="text-[10px] font-bold tracking-wider text-amber-300 uppercase block mb-0.5"><%= t('attachment_label') %></span>
+                                    <h4 class="text-sm font-bold text-white leading-snug">
                                         <%= post.attachment_name || 'Dokumen Makalah Riset' %>
                                     </h4>
                                     <% if (post.attachment_size) { %>
-                                        <span class="text-xs text-gray-500 font-medium"><%= t('file_size') %>: <%=
+                                        <span class="text-xs text-amber-100/70 font-medium"><%= t('file_size') %>: <%=
                                                 (post.attachment_size / (1024 * 1024)).toFixed(2) %> MB</span>
                                         <% } %>
                                 </div>
                             </div>
                             <a href="<%= post.attachment_url %>"
                                 download="<%= post.attachment_name || 'dokumen-makalah' %>"
-                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs transition shadow-sm shrink-0">
+                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-sm shrink-0">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -145,16 +145,16 @@
 
                     <!-- Native Share Section (Bottom of Article) -->
                     <div
-                        class="mb-12 p-4 sm:p-5 rounded-2xl bg-emerald-50/50 border border-emerald-100 flex flex-col sm:flex-row items-center justify-between gap-4" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
+                        class="mb-12 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#0c2a38] to-[#071c26] text-white border border-amber-500/20 shadow-md flex flex-col sm:flex-row items-center justify-between gap-4" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
                         <div class="space-y-0.5 text-center sm:text-left">
-                            <h3 class="text-xs sm:text-sm font-bold text-emerald-950"><%= t('share_article') %></h3>
-                            <p class="text-xs text-gray-600 font-light"><%= t('share_subtitle') %></p>
+                            <h3 class="text-xs sm:text-sm font-bold text-amber-200"><%= t('share_article') %></h3>
+                            <p class="text-xs text-amber-100/70 font-light"><%= t('share_subtitle') %></p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
                             <a href="/blog/<%= (typeof originalPost !== 'undefined' && originalPost) ? originalPost.slug : post.slug %>/pdf<%= (typeof targetLang !== 'undefined' && targetLang !== 'id') ? '?lang=' + targetLang : '' %>" target="_blank"
-                                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-emerald-300 text-emerald-900 hover:bg-emerald-50 text-xs font-semibold transition shadow-xs"
+                                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-black/40 border border-amber-500/30 text-amber-200 hover:bg-black/60 text-xs font-bold transition shadow-xs"
                                 title="<%= t('download_pdf') %>">
-                                <svg class="w-3.5 h-3.5 text-emerald-800" fill="none"
+                                <svg class="w-3.5 h-3.5 text-amber-300" fill="none"
                                     stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         stroke-width="2"
@@ -163,7 +163,7 @@
                                 <span><%= t('download_pdf') %></span>
                             </a>
                             <button onclick="shareArticle()"
-                                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs transition shadow-sm cursor-pointer">
+                                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-sm cursor-pointer">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -173,7 +173,7 @@
                                 <span><%= t('share_now') %></span>
                             </button>
                             <button onclick="copyArticleLink()"
-                                class="px-3 py-2 rounded-xl border border-emerald-200 bg-white hover:bg-emerald-50 text-emerald-800 font-medium text-xs transition cursor-pointer"
+                                class="px-3.5 py-2 rounded-xl border border-amber-500/30 bg-black/40 hover:bg-black/60 text-amber-200 font-bold text-xs transition cursor-pointer"
                                 title="<%= t('copy_link') %>">
                                 <%= t('copy_link') %>
                             </button>

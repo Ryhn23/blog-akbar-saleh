@@ -620,14 +620,31 @@ function splitHtmlIntoSections(html, maxChunkSize = 2500) {
 }
 
 const CONTEXTUAL_TRANSLATION_GUIDELINES = `
-CRITICAL CONTEXTUAL TRANSLATION GUIDELINES:
-1. Translate contextually, naturally, and grammatically according to the scholarly standards of the target language.
-2. Contextually localize institutional, cultural, and Islamic religious concepts within the flow of the sentence:
-   - Indonesian "Pesantren" / "Pondok Pesantren": Localize naturally according to context (e.g. in Arabic as "المعاهد الإسلامية" / "الحوزة العلمية" / "المعاهد الدينية"; in Persian as "حوزه‌های علمیه" / "مدارس علوم دینی"; in English as "Islamic Seminary" / "Islamic Boarding School"). NEVER leave it in untranslated Latin or as an awkward transliteration.
-   - Indonesian "Santri": Localize as religious/seminary students (Arabic: "طلاب العلوم الدينية" / "طلاب المعهد"; Persian: "طلاب" / "دانش‌پژوهان"; English: "seminary students").
-   - Indonesian "Kyai" / "Kiai": Localize as religious scholar/teacher/director (Arabic: "الشيخ" / "عالم الدين" / "الأستاذ"; Persian: "عالم دینی" / "استاد"; English: "Islamic scholar").
-   - Indonesian "Pendidikan Pesantren": Localize as Islamic seminary education (Arabic: "التعليم الديني في المعاهد" / "التربية الحوزوية"; Persian: "آموزش حوزوی"; English: "Islamic Seminary Education").
-3. Maintain appropriate grammatical agreement, cases, and natural syntax in the target language.
+CRITICAL CONTEXTUAL & SCHOLARLY TRANSLATION GUIDELINES:
+1. TRANSLATION PHILOSOPHY & PRESERVATION OF ORIGINAL SCRIPTURAL QUOTES:
+   - PRESERVE ORIGINAL ARABIC SCRIPTURE & QUOTATIONS: If the author quotes Arabic text (Quranic verses, Hadith texts, sayings of scholars/aimmah, classical excerpts in Arabic script):
+     * KEEP THE ORIGINAL ARABIC TEXT INTACT (verbatim). Do NOT alter, damage, or remove the Arabic text.
+     * Translate the surrounding Indonesian prose, explanations, commentaries, and Indonesian translations into the target language.
+     * When translating to English: Keep the Arabic script, and translate the accompanying Indonesian explanation/translation into scholarly English.
+     * When translating to Arabic: Keep the authentic Arabic quote as-is without re-translating it, and translate the author's Indonesian exposition into fluent classical Arabic (fusha).
+     * When translating to Persian: Keep the original Arabic quote intact, and translate the Indonesian exposition into formal Persian.
+
+2. TREATMENT OF MIXED-LANGUAGE TEXTS & TECHNICAL SCHOLARLY JARGON:
+   - PRESERVE FOREIGN LANGUAGE CITATIONS: If the text contains direct citations in English, Latin, or Persian (in quotation marks or blockquotes), maintain the original quotation and translate only the author's analysis.
+   - ISLAMIC & PHILOSOPHICAL TERMINOLOGY: Translate technical Islamic terms (Fiqh, Ushul Fiqh, Kalam, Falsafah, Irfan) into their recognized academic and scholarly equivalents:
+     * e.g., "Ushul Fiqih" -> Arabic: "أصول الفقه", English: "Principles of Islamic Jurisprudence", Persian: "اصول فقه"
+     * e.g., "Irfan" -> Arabic: "العرفان", English: "Islamic Mysticism / Gnosis", Persian: "عرفان"
+     * e.g., "Istishhab" -> Arabic: "الاستصحاب", English: "Presumption of Continuity (Istishhab)", Persian: "استصحاب"
+     * e.g., "Nahjul Balaghah" -> Arabic: "نهج البلاغة", English: "Peak of Eloquence (Nahj al-Balagha)", Persian: "نهج‌البلاغه"
+
+3. INSTITUTIONAL & CULTURAL LOCALIZATION (IN-CONTEXT):
+   - "Pesantren" / "Pondok Pesantren": Localize naturally according to context (Arabic: "المعاهد الإسلامية" / "الحوزة العلمية" / "المعاهد الدينية"; Persian: "حوزه‌های علمیه" / "مدارس علوم دینی"; English: "Islamic Seminary / Traditional Islamic Academy"). NEVER leave it in untranslated Latin unless referring strictly as a proper noun.
+   - "Santri": Localize as religious/seminary students (Arabic: "طلاب العلوم الدينية" / "طلاب المعهد"; Persian: "طلاب" / "دانش‌پژوهان"; English: "seminary students / disciples").
+   - "Kyai" / "Kiai": Localize as religious scholar/director (Arabic: "الشيخ" / "عالم الدين" / "الأستاذ"; Persian: "عالم دینی" / "استاد"; English: "Islamic scholar / Seminary Director").
+   - "Pendidikan Pesantren": Localize as Islamic seminary education (Arabic: "التعليم الديني في المعاهد" / "التربية الحوزوية"; Persian: "آموزش حوزوی"; English: "Islamic Seminary Education").
+
+4. SYNTAX & LINGUISTIC ELEGANCE:
+   - Maintain appropriate grammatical agreement, cases, and natural academic syntax in the target language.
 `;
 
 /**
@@ -736,20 +753,93 @@ Location: ${rawProfile.authorLocation}`;
   return rawProfile;
 }
 
+const CATEGORY_DEFAULT_TRANSLATIONS = {
+  "Al-Qur'an & Tafsir": {
+    id: "Al-Qur'an & Tafsir",
+    en: "Quran & Tafsir",
+    ar: "القرآن والتفسير",
+    fa: "قرآن و تفسیر"
+  },
+  "Fiqih & Ushul Fiqih": {
+    id: "Fiqih & Ushul Fiqih",
+    en: "Fiqh & Usul al-Fiqh",
+    ar: "الفقه وأصول الفقه",
+    fa: "فقه و اصول فقه"
+  },
+  "Teologi": {
+    id: "Teologi",
+    en: "Theology",
+    ar: "علم الكلام",
+    fa: "کلام و عقاید"
+  },
+  "Filsafat": {
+    id: "Filsafat",
+    en: "Philosophy",
+    ar: "الفلسفة والحكمة",
+    fa: "فلسفه و حکمت"
+  },
+  "Irfan": {
+    id: "Irfan",
+    en: "Irfan & Mysticism",
+    ar: "العرفان الإسلامي",
+    fa: "عرفان اسلامی"
+  },
+  "Akhlak": {
+    id: "Akhlak",
+    en: "Ethics & Morality",
+    ar: "الأخلاق والسلوك",
+    fa: "اخلاق اسلامی"
+  },
+  "Sejarah": {
+    id: "Sejarah",
+    en: "Islamic History",
+    ar: "التاريخ الإسلامي",
+    fa: "تاریخ اسلام"
+  },
+  "Nahjul Balaghah": {
+    id: "Nahjul Balaghah",
+    en: "Nahj al-Balagha",
+    ar: "نهج البلاغة",
+    fa: "نهج‌البلاغه"
+  },
+  "Pemikiran Islam": {
+    id: "Pemikiran Islam",
+    en: "Islamic Thought",
+    ar: "الفكر الإسلامي",
+    fa: "اندیشه اسلامی"
+  },
+  "Refleksi": {
+    id: "Refleksi",
+    en: "Reflections",
+    ar: "تأملات فكرية",
+    fa: "تأملات و یادداشت‌ها"
+  }
+};
+
 /**
  * Translates an array of category items dynamically via Ollama with smart caching
  */
 async function getOrTranslateCategories(rawCategories, targetLang) {
   const currentLang = (targetLang || 'id').toLowerCase();
-  if (currentLang === 'id' || !SUPPORTED_LANGUAGES[currentLang] || !rawCategories || rawCategories.length === 0) {
-    return rawCategories.map(c => ({
-      rawCategory: typeof c === 'string' ? c : c.category,
-      localizedName: typeof c === 'string' ? c : c.category,
-      count: c.count || 0
-    }));
+  if (!rawCategories || rawCategories.length === 0) {
+    return [];
   }
 
-  const catNames = rawCategories.map(c => typeof c === 'string' ? c : c.category);
+  if (currentLang === 'id' || !SUPPORTED_LANGUAGES[currentLang]) {
+    return rawCategories.map(c => {
+      const raw = typeof c === 'string' ? c : (c.category || c.name);
+      return {
+        rawCategory: raw,
+        name: raw,
+        localizedName: raw,
+        count: c.count || 0,
+        icon: c.icon || null,
+        slug: c.slug || null
+      };
+    });
+  }
+
+  const catNames = rawCategories.map(c => typeof c === 'string' ? c : (c.category || c.name));
   const sourceHash = computeContentHash(catNames);
   const cached = getPageTranslation('categories_list', currentLang, sourceHash);
 
@@ -812,11 +902,15 @@ ${JSON.stringify(catNames)}`;
   }
 
   return rawCategories.map(c => {
-    const raw = typeof c === 'string' ? c : c.category;
+    const raw = typeof c === 'string' ? c : (c.category || c.name);
+    const fallback = CATEGORY_DEFAULT_TRANSLATIONS[raw] ? CATEGORY_DEFAULT_TRANSLATIONS[raw][currentLang] : raw;
     return {
       rawCategory: raw,
-      localizedName: dict[raw] || raw,
-      count: c.count || 0
+      name: raw,
+      localizedName: dict[raw] || fallback || raw,
+      count: c.count || 0,
+      icon: c.icon || null,
+      slug: c.slug || null
     };
   });
 }

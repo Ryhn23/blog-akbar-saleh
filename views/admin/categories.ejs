@@ -82,6 +82,7 @@
                         <table class="w-full text-left border-collapse text-xs">
                             <thead>
                                 <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 uppercase font-semibold">
+                                    <th class="p-3 w-12 text-center">Ikon</th>
                                     <th class="p-3">Nama Kategori</th>
                                     <th class="p-3">Slug URL</th>
                                     <th class="p-3">Jumlah Tulisan</th>
@@ -91,6 +92,15 @@
                             <tbody class="divide-y divide-gray-100">
                                 <% categories.forEach(cat => { %>
                                     <tr class="hover:bg-gray-50 transition">
+                                        <td class="p-3 text-center">
+                                            <% if (cat.icon) { %>
+                                                <div class="w-7 h-7 rounded bg-[#0c2a38] p-1 inline-flex items-center justify-center shadow-xs mx-auto">
+                                                    <img src="<%= cat.icon %>" alt="" class="w-full h-full object-contain filter brightness-110">
+                                                </div>
+                                            <% } else { %>
+                                                <span class="text-gray-400 text-[10px]">-</span>
+                                            <% } %>
+                                        </td>
                                         <td class="p-3 font-semibold text-gray-900">
                                             <!-- Inline Edit Form -->
                                             <form action="/admin/categories/<%= cat.id %>/edit" method="POST" class="flex items-center gap-2">

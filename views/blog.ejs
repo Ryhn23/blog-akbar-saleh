@@ -1,115 +1,155 @@
-<%- include('partials/header', { 
-    title: typeof title !== 'undefined' ? title : 'Arsip Kajian & Tulisan Ilmiah',
-    canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : null,
-    schemaJsonLd: typeof schemaJsonLd !== 'undefined' ? schemaJsonLd : null
-}) %>
+<%- include('partials/header', { title: typeof title !=='undefined' ? title : 'Arsip Kajian & Tulisan Ilmiah' ,
+    canonicalUrl: typeof canonicalUrl !=='undefined' ? canonicalUrl : null, schemaJsonLd: typeof schemaJsonLd
+    !=='undefined' ? schemaJsonLd : null }) %>
 
-<section class="py-12 bg-white min-h-[75vh]" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <!-- Header & Minimalist Search -->
-        <div class="mb-10 pb-6 border-b border-gray-100">
-            <h1 class="text-2xl sm:text-3xl font-serif font-bold text-gray-900 mb-2">
-                <%= t('nav_blog') %>
-            </h1>
-            <p class="text-sm text-gray-500 mb-6">
-                <%= siteTagline %>
-            </p>
+    <section class="py-6 sm:py-8 bg-gray-50/40 min-h-[80vh]" <%- (typeof isRtl !=='undefined' && isRtl) ? 'dir="rtl"'
+        : '' %>>
+        <div class="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8">
 
-            <form action="/blog" method="GET" class="relative max-w-lg">
-                <input 
-                    type="text" 
-                    name="q" 
-                    value="<%= searchQuery %>" 
-                    placeholder="<%= t('search_placeholder') %>" 
-                    class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-emerald-700 focus:border-emerald-700 focus:bg-white transition"
-                >
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                </div>
-                <% if (selectedCategory) { %>
-                    <input type="hidden" name="category" value="<%= selectedCategory %>">
-                <% } %>
-                <% if (typeof currentLang !== 'undefined' && currentLang !== 'id') { %>
-                    <input type="hidden" name="lang" value="<%= currentLang %>">
-                <% } %>
-            </form>
-        </div>
-
-        <!-- Category Pills (Clean Green Theme) -->
-        <% if (categories && categories.length > 0) { %>
-            <div class="flex items-center flex-wrap gap-2 mb-8">
-                <a 
-                    href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang + (searchQuery ? '&q=' + encodeURIComponent(searchQuery) : '') : (searchQuery ? '?q=' + encodeURIComponent(searchQuery) : '') %>" 
-                    class="px-3 py-1 rounded-md text-xs font-semibold transition <%= !selectedCategory ? 'bg-emerald-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-800' %>"
-                >
-                    <%= t('all_categories') %>
-                </a>
-                <% categories.forEach(cat => { %>
-                    <a 
-                        href="/blog?category=<%= encodeURIComponent(cat.rawCategory) %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '&lang=' + currentLang : '' %><%= searchQuery ? '&q=' + encodeURIComponent(searchQuery) : '' %>" 
-                        class="px-3 py-1 rounded-md text-xs font-medium transition <%= selectedCategory === cat.rawCategory ? 'bg-emerald-800 text-white font-semibold' : 'bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-800' %>"
-                    >
-                        <%= cat.localizedName %> (<%= cat.count %>)
-                    </a>
-                <% }) %>
-            </div>
-        <% } %>
-
-        <!-- Active Filter Alert -->
-        <% if (searchQuery || selectedCategory) { %>
-            <div class="flex items-center justify-between bg-emerald-50 border border-emerald-100 text-emerald-900 px-4 py-2.5 rounded-lg mb-8 text-xs">
-                <span>
-                    <%= t('filter_showing_results') %> 
-                    <% if (selectedCategory) { %>
-                        <%= t('filter_category') %> <strong>"<%= (typeof selectedCategoryLocalized !== 'undefined' && selectedCategoryLocalized) ? selectedCategoryLocalized : selectedCategory %>"</strong>
-                    <% } %>
-                    <% if (selectedCategory && searchQuery) { %> <%= t('and') %> <% } %>
-                    <% if (searchQuery) { %>
-                        <%= t('filter_search') %> <strong>"<%= searchQuery %>"</strong>
-                    <% } %>
-                    (<%= posts.length %> <%= t('articles_count') %>)
-                </span>
-                <a href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="font-bold text-emerald-800 hover:underline"><%= t('filter_clear') %></a>
-            </div>
-        <% } %>
-
-        <!-- Article Stream -->
-        <div class="space-y-8 divide-y divide-gray-100">
-            <% if (posts && posts.length > 0) { %>
-                <% posts.forEach(post => { %>
-                    <article class="pt-8 first:pt-0 group">
-                        <div class="flex items-center gap-3 text-xs text-gray-500 mb-2">
-                            <span class="text-emerald-800 font-semibold"><%= post.category || 'Kajian' %></span>
-                            <span>•</span>
-                            <time datetime="<%= post.created_at %>"><%= new Date(post.created_at).toLocaleDateString((typeof currentLang !== 'undefined' && currentLang === 'ar') ? 'ar-EG' : ((typeof currentLang !== 'undefined' && currentLang === 'fa') ? 'fa-IR' : ((typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en-US' : 'id-ID')), { day: 'numeric', month: 'long', year: 'numeric' }) %></time>
-                            <span>•</span>
-                            <span><%= post.reading_time || 1 %> <%= t('min_read') %></span>
+            <!-- Top 10-Category Navigation Strip (Matching Home Banner Strip) -->
+            <% if (categories && categories.length> 0) { %>
+                <div
+                    class="mb-8 rounded-2xl sm:rounded-3xl overflow-hidden shadow-md border border-emerald-950/10 bg-[#0a222e]">
+                    <nav aria-label="Kategori Kajian" class="bg-gradient-to-b from-[#0c2a38] to-[#071c26]">
+                        <div class="grid grid-cols-5 md:grid-cols-10 divide-x divide-amber-500/15 rtl:divide-x-reverse">
+                            <% categories.forEach((cat, index)=> {
+                                const isSelected = selectedCategory === cat.rawCategory;
+                                %>
+                                <a href="<%= isSelected ? '/blog' + (typeof currentLang !== 'undefined' && currentLang !== 'id' ? '?lang=' + currentLang : '') : '/blog?category=' + encodeURIComponent(cat.rawCategory) + (typeof currentLang !== 'undefined' && currentLang !== 'id' ? '&lang=' + currentLang : '') %>"
+                                    class="group flex flex-col items-center justify-center text-center p-2 sm:p-2.5 md:p-3 transition duration-150 relative <%= isSelected ? 'bg-black/60 shadow-inner' : 'hover:bg-[#13384c]/80' %> <%= index >= 5 ? 'border-t border-amber-500/15 md:border-t-0' : '' %>"
+                                    title="<%= cat.localizedName %> (<%= cat.count %>)">
+                                    <% if (cat.icon) { %>
+                                        <div
+                                            class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center mb-1 sm:mb-1.5 transition-transform duration-200 <%= isSelected ? 'scale-95 opacity-90' : 'group-hover:scale-110' %>">
+                                            <img src="<%= cat.icon %>" alt="<%= cat.localizedName %>"
+                                                class="w-full h-full object-contain filter drop-shadow-sm brightness-105"
+                                                loading="lazy">
+                                        </div>
+                                        <% } %>
+                                            <span
+                                                class="text-[9px] sm:text-[10px] md:text-[10.5px] lg:text-[11px] uppercase tracking-tight leading-tight line-clamp-2 transition-colors <%= isSelected ? 'text-white font-extrabold' : 'font-bold text-amber-100/90 group-hover:text-amber-300' %>">
+                                                <%= cat.localizedName %>
+                                            </span>
+                                </a>
+                                <% }) %>
                         </div>
-
-                        <h2 class="text-lg sm:text-xl font-serif font-bold text-gray-900 mb-2 group-hover:text-emerald-800 transition leading-snug">
-                            <a href="/blog/<%= post.slug %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>">
-                                <%= post.title %>
-                            </a>
-                        </h2>
-
-                        <p class="text-gray-600 text-sm leading-relaxed mb-3 line-clamp-2">
-                            <%= post.meta_description || post.content.replace(/<[^>]+>/g, '').substring(0, 140) + '...' %>
-                        </p>
-
-                        <a href="/blog/<%= post.slug %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="inline-flex items-center text-xs font-semibold text-emerald-800 hover:underline">
-                            <%= t('read_more') %> →
-                        </a>
-                    </article>
-                <% }) %>
-            <% } else { %>
-                <div class="text-center py-12 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                    <p class="text-sm"><%= t('no_articles_found') %></p>
+                    </nav>
                 </div>
-            <% } %>
+                <% } %>
+
+                    <!-- Active Category Header & Count -->
+                    <div class="flex items-center justify-between pb-3 mb-6 border-b border-gray-200/80">
+                        <div>
+                            <h1 class="text-xl sm:text-2xl font-serif font-bold text-[#0c2a38] flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-xs bg-amber-500 rotate-45 shrink-0"></span>
+                                <% if (selectedCategory) { %>
+                                    <span>
+                                        <%= (typeof selectedCategoryLocalized !=='undefined' &&
+                                            selectedCategoryLocalized) ? selectedCategoryLocalized : selectedCategory %>
+                                    </span>
+                                    <% } else { %>
+                                        <span>
+                                            <%= t('all_articles') %>
+                                        </span>
+                                        <% } %>
+                            </h1>
+                            <p class="text-xs text-gray-500 mt-0.5">
+                                <%= posts.length %>
+                                    <%= t('articles_count') %>
+                            </p>
+                        </div>
+                        <% if (selectedCategory) { %>
+                            <a href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>"
+                                class="inline-flex items-center gap-1.5 text-xs font-bold text-amber-200 bg-[#0c2a38] hover:bg-[#13384c] px-3.5 py-1.5 rounded-xl border border-amber-500/30 transition shadow-xs">
+                                <span>✕</span>
+                                <span>
+                                    <%= t('filter_clear') %>
+                                </span>
+                            </a>
+                            <% } %>
+                    </div>
+
+                    <!-- Article Cards Grid (Clean, Polished Aesthetic) -->
+                    <% if (posts && posts.length> 0) { %>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+                            <% posts.forEach(post=> { %>
+                                <article
+                                    class="bg-white rounded-2xl border border-gray-200/80 hover:border-amber-500/40 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden group p-5 sm:p-6">
+                                    <div>
+                                        <!-- Meta Tagging Bar -->
+                                        <div class="flex items-center gap-2 text-[11px] text-gray-500 font-medium mb-3">
+                                            <span
+                                                class="px-2.5 py-0.5 rounded-md bg-[#0c2a38] text-amber-200 border border-amber-500/20 font-bold text-[10px] tracking-wide">
+                                                <%= post.category || 'Kajian' %>
+                                            </span>
+                                            <span>•</span>
+                                            <time datetime="<%= post.created_at %>">
+                                                <%= new Date(post.created_at).toLocaleDateString((typeof currentLang
+                                                    !=='undefined' && currentLang==='ar' ) ? 'ar-EG' : ((typeof
+                                                    currentLang !=='undefined' && currentLang==='fa' ) ? 'fa-IR' :
+                                                    ((typeof currentLang !=='undefined' && currentLang==='en' )
+                                                    ? 'en-US' : 'id-ID' )), { day: 'numeric' , month: 'short' ,
+                                                    year: 'numeric' }) %>
+                                            </time>
+                                            <span>•</span>
+                                            <span>
+                                                <%= post.reading_time || 1 %>
+                                                    <%= t('min_read') %>
+                                            </span>
+                                        </div>
+
+                                        <!-- Post Title -->
+                                        <h2
+                                            class="text-base sm:text-lg font-serif font-bold text-gray-900 mb-2.5 group-hover:text-[#0c2a38] transition leading-snug">
+                                            <a
+                                                href="/blog/<%= post.slug %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>">
+                                                <%= post.title %>
+                                            </a>
+                                        </h2>
+
+                                        <!-- Post Excerpt -->
+                                        <p
+                                            class="text-gray-600 text-xs sm:text-sm leading-relaxed mb-4 line-clamp-3 font-light">
+                                            <%= post.meta_description || post.content.replace(/<[^>]+>/g,
+                                                '').substring(0, 150) + '...' %>
+                                        </p>
+                                    </div>
+
+                                    <!-- Read Link -->
+                                    <div class="pt-3 border-t border-gray-100 flex items-center justify-between">
+                                        <a href="/blog/<%= post.slug %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>"
+                                            class="inline-flex items-center gap-1.5 text-xs font-bold text-[#0c2a38] group-hover:text-emerald-800 transition group-hover:translate-x-1 duration-150">
+                                            <span>
+                                                <%= t('read_more') %>
+                                            </span>
+                                            <span>→</span>
+                                        </a>
+                                    </div>
+                                </article>
+                                <% }) %>
+                        </div>
+                        <% } else { %>
+                            <div
+                                class="text-center py-16 px-4 bg-white rounded-2xl border border-dashed border-gray-200">
+                                <div
+                                    class="w-12 h-12 rounded-full bg-[#0c2a38] text-amber-200 flex items-center justify-center mx-auto mb-3">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <p class="text-sm font-semibold text-gray-700 mb-1">
+                                    <%= t('no_articles_found') %>
+                                </p>
+                                <a href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>"
+                                    class="inline-flex items-center px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#0c2a38] to-[#071c26] text-amber-200 border border-amber-500/30 hover:brightness-110 font-bold text-xs shadow-xs transition">
+                                    <%= t('all_articles') %>
+                                </a>
+                            </div>
+                            <% } %>
+
         </div>
+    </section>
 
-    </div>
-</section>
-
-<%- include('partials/footer') %>
+    <%- include('partials/footer') %>

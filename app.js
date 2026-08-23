@@ -430,7 +430,13 @@ app.get('/', async (req, res) => {
 
   const rawFeaturedPosts = getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 AND is_featured = 1 ORDER BY created_at DESC LIMIT 2');
   const rawRecentPosts = getAll('SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0 ORDER BY created_at DESC LIMIT 6');
-  const rawCategories = getAll('SELECT category, COUNT(*) as count FROM posts WHERE is_published = 1 AND is_hidden = 0 GROUP BY category ORDER BY count DESC');
+  const rawCategories = getAll(`
+    SELECT c.name as category, c.name, c.slug, c.icon, c.sort_order, COUNT(p.id) as count
+    FROM categories c
+    LEFT JOIN posts p ON p.category = c.name AND p.is_published = 1 AND p.is_hidden = 0
+    GROUP BY c.id
+    ORDER BY c.sort_order ASC, c.id ASC
+  `);
   const totalPosts = getOne('SELECT COUNT(*) as total FROM posts WHERE is_published = 1 AND is_hidden = 0')?.total || 0;
 
   const [featuredPosts, recentPosts, categories] = await Promise.all([
@@ -533,7 +539,13 @@ app.get('/blog', async (req, res) => {
   sql += ' ORDER BY created_at DESC';
 
   const rawPosts = getAll(sql, params);
-  const rawCategories = getAll('SELECT category, COUNT(*) as count FROM posts WHERE is_published = 1 AND is_hidden = 0 GROUP BY category ORDER BY count DESC');
+  const rawCategories = getAll(`
+    SELECT c.name as category, c.name, c.slug, c.icon, c.sort_order, COUNT(p.id) as count
+    FROM categories c
+    LEFT JOIN posts p ON p.category = c.name AND p.is_published = 1 AND p.is_hidden = 0
+    GROUP BY c.id
+    ORDER BY c.sort_order ASC, c.id ASC
+  `);
 
   const [posts, categories] = await Promise.all([
     Promise.all(rawPosts.map(p => localizePostAsync(p, targetLang))),

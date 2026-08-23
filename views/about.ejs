@@ -4,37 +4,58 @@
     schemaJsonLd: typeof schemaJsonLd !== 'undefined' ? schemaJsonLd : null
 }) %>
 
-<section class="py-10 sm:py-14 bg-white min-h-[80vh]">
+<section class="py-8 sm:py-12 bg-gray-50/40 min-h-[80vh]">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <!-- Header Profile -->
-        <header class="border-b border-gray-100 pb-6 mb-8" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
-            <span class="text-xs font-bold uppercase tracking-wider text-emerald-800 block mb-2">
-                <%= t('author_profile_tag') %>
-            </span>
-            <h1 class="text-3xl sm:text-4xl font-serif font-bold text-gray-900 tracking-tight mb-2">
-                <%= (page && page.title) ? page.title : authorName %>
-            </h1>
-            <% if (page && page.subtitle) { %>
-                <p class="text-sm sm:text-base text-gray-600 font-medium font-serif">
-                    <%= page.subtitle %>
-                </p>
-            <% } else { %>
-                <p class="text-sm sm:text-base text-gray-600 font-medium">
-                    <%= authorRole %>
-                </p>
-            <% } %>
+        <!-- Luxury Hero Profile Header Card -->
+        <header class="mb-10 rounded-3xl overflow-hidden bg-gradient-to-br from-[#0c2a38] to-[#071c26] border border-amber-500/20 shadow-lg text-white p-6 sm:p-10 relative" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
+            <!-- Background Decorative Flourish -->
+            <div class="absolute top-0 right-0 -mt-10 -mr-10 w-48 h-48 bg-amber-500/5 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div class="relative z-10">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-black/40 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase tracking-wider mb-3">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    <span><%= t('author_profile_tag') %></span>
+                </span>
+                
+                <h1 class="text-2xl sm:text-4xl font-serif font-bold text-white tracking-tight mb-2">
+                    <%= (page && page.title) ? page.title : authorName %>
+                </h1>
+                
+                <% if (page && page.subtitle) { %>
+                    <p class="text-sm sm:text-base text-amber-100/90 font-serif leading-relaxed">
+                        <%= page.subtitle %>
+                    </p>
+                <% } else { %>
+                    <p class="text-sm sm:text-base text-amber-100/90 font-medium">
+                        <%= authorRole %>
+                    </p>
+                <% } %>
+            </div>
         </header>
 
         <!-- Dynamic Content from Quill Editor -->
-        <div class="quill-content mb-12" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
-            <%- (page && page.content) ? page.content : '<p>Belum ada isi profil.</p>' %>
+        <div class="bg-white rounded-3xl p-6 sm:p-10 border border-gray-200/80 shadow-xs mb-10">
+            <div class="quill-content" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
+                <%- (page && page.content) ? page.content : '<p>Belum ada isi profil.</p>' %>
+            </div>
         </div>
 
-        <!-- Contact & Location Box -->
-        <div class="pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-2">
-            <span><%= t('official_contact') %>: <a href="mailto:<%= authorEmail %>" class="text-emerald-800 font-semibold hover:underline"><%= authorEmail %></a></span>
-            <span><%= authorLocation || t('default_location') %></span>
+        <!-- Contact & Location Box in Dark Navy -->
+        <div class="p-6 rounded-2xl bg-gradient-to-r from-[#0c2a38] to-[#071c26] text-amber-100 border border-amber-500/20 shadow-md flex flex-col sm:flex-row items-center justify-between text-xs gap-4">
+            <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-amber-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                <span><%= t('official_contact') %>: <a href="mailto:<%= authorEmail %>" class="text-amber-300 font-bold hover:underline ml-1"><%= authorEmail %></a></span>
+            </div>
+            <div class="flex items-center gap-2 text-amber-200/80">
+                <svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <span><%= authorLocation || t('default_location') %></span>
+            </div>
         </div>
 
     </div>

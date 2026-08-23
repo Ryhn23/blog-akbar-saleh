@@ -61,6 +61,10 @@ function initDB() {
     )
   `);
 
+  // Migrations for categories table
+  try { db.exec('ALTER TABLE categories ADD COLUMN icon TEXT'); } catch (e) {}
+  try { db.exec('ALTER TABLE categories ADD COLUMN sort_order INTEGER DEFAULT 0'); } catch (e) {}
+
   // Create Posts Table
   db.exec(`
     CREATE TABLE IF NOT EXISTS posts (
@@ -203,23 +207,36 @@ function initDB() {
     );
   }
 
-  // Seed default categories if empty
-  const catCount = db.prepare('SELECT COUNT(*) as count FROM categories').get().count;
-  if (catCount === 0) {
-    const defaultCats = [
-      'Kajian Keislaman',
-      'Artikel Ilmiah',
-      'Opini & Pandangan',
-      'Pendidikan Pesantren',
-      'Filsafat & Tasawuf',
-      'Fiqih & Fatwa'
-    ];
-    const insertCat = db.prepare('INSERT OR IGNORE INTO categories (name, slug) VALUES (?, ?)');
-    for (const name of defaultCats) {
-      const slug = slugify(name, { lower: true, strict: true });
-      insertCat.run(name, slug);
+  // Official 10 Categories with Icons & Sort Orders
+  const OFFICIAL_CATEGORIES = [
+    { name: "Al-Qur'an & Tafsir", icon: '/icons/quran-tafsir.png', slug: 'al-quran-and-tafsir', sort_order: 1 },
+    { name: "Fiqih & Ushul Fiqih", icon: '/icons/fiqih-ushul.png', slug: 'fiqih-and-ushul-fiqih', sort_order: 2 },
+    { name: "Teologi", icon: '/icons/teologi.png', slug: 'teologi', sort_order: 3 },
+    { name: "Filsafat", icon: '/icons/filsafat.png', slug: 'filsafat', sort_order: 4 },
+    { name: "Irfan", icon: '/icons/irfan.png', slug: 'irfan', sort_order: 5 },
+    { name: "Akhlak", icon: '/icons/akhlak.png', slug: 'akhlak', sort_order: 6 },
+    { name: "Sejarah", icon: '/icons/sejarah.png', slug: 'sejarah', sort_order: 7 },
+    { name: "Nahjul Balaghah", icon: '/icons/nahjul-balaghah.png', slug: 'nahjul-balaghah', sort_order: 8 },
+    { name: "Pemikiran Islam", icon: '/icons/pemikiran.png', slug: 'pemikiran-islam', sort_order: 9 },
+    { name: "Refleksi", icon: '/icons/refleksi.png', slug: 'refleksi', sort_order: 10 }
+  ];
+
+  for (const cat of OFFICIAL_CATEGORIES) {
+    const existing = db.prepare('SELECT id FROM categories WHERE name = ?').get(cat.name);
+    if (existing) {
+      db.prepare('UPDATE categories SET icon = ?, slug = ?, sort_order = ? WHERE id = ?').run(cat.icon, cat.slug, cat.sort_order, existing.id);
+    } else {
+      db.prepare('INSERT INTO categories (name, slug, icon, sort_order) VALUES (?, ?, ?, ?)').run(cat.name, cat.slug, cat.icon, cat.sort_order);
     }
   }
+
+  // Map older sample categories to official categories if necessary
+  try {
+    db.prepare("UPDATE posts SET category = 'Fiqih & Ushul Fiqih' WHERE category = 'Kajian Keislaman' OR category = 'Fiqih & Fatwa'").run();
+    db.prepare("UPDATE posts SET category = 'Refleksi' WHERE category = 'Opini & Pandangan' OR category = 'Pendidikan Pesantren'").run();
+    db.prepare("UPDATE posts SET category = 'Filsafat' WHERE category = 'Filsafat & Tasawuf'").run();
+    db.prepare("UPDATE posts SET category = 'Pemikiran Islam' WHERE category = 'Artikel Ilmiah'").run();
+  } catch (_) {}
 
   // Create Login Lockouts Table for Progressive Brute-Force Protection
   db.exec(`

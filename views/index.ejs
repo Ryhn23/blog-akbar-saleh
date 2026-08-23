@@ -4,105 +4,165 @@
     schemaJsonLd: typeof schemaJsonLd !== 'undefined' ? schemaJsonLd : null
 }) %>
 
-<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
+<div class="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-12" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
     
-    <!-- Compact Header Intro -->
-    <header class="pb-8 mb-8 border-b border-gray-100">
-        <% if (typeof heroBadge !== 'undefined' && heroBadge && heroBadge.trim()) { %>
-        <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-xs font-medium border border-emerald-100 mb-3">
-            <span><%= heroBadge %></span>
+    <!-- Top Hero Banner & 10-Category Navigation Strip -->
+    <header class="mb-10 sm:mb-12 rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg border border-emerald-950/10 bg-[#0a222e]">
+        <!-- Responsive Localized Banner Image (WebP: id.webp, en.webp, ar.webp, fa.webp) -->
+        <div class="w-full relative bg-white overflow-hidden">
+            <% 
+                const activeBannerLang = (typeof currentLang !== 'undefined' && ['id', 'en', 'ar', 'fa'].includes(currentLang)) ? currentLang : 'id';
+                const bannerSrc = '/banner/' + activeBannerLang + '.webp';
+                const bannerAlt = (typeof siteName !== 'undefined' ? siteName : 'Akbar Saleh') + ' — ' + (typeof siteTagline !== 'undefined' ? siteTagline : 'Kajian & Pemikiran Keislaman');
+            %>
+            <img 
+                src="<%= bannerSrc %>" 
+                alt="<%= bannerAlt %>" 
+                class="w-full h-auto block object-cover select-none"
+                loading="eager"
+                fetchpriority="high"
+                width="6142"
+                height="3071"
+            >
         </div>
+
+        <!-- 10 Categories Strip (Horizontal on Desktop, 2 Rows of 5 on Mobile) -->
+        <% if (categories && categories.length > 0) { %>
+        <nav aria-label="Kategori Kajian" class="bg-gradient-to-b from-[#0c2a38] to-[#071c26] border-t border-amber-500/20">
+            <div class="grid grid-cols-5 md:grid-cols-10 divide-x divide-amber-500/15 rtl:divide-x-reverse">
+                <% categories.forEach((cat, index) => { %>
+                    <a 
+                        href="/blog?category=<%= encodeURIComponent(cat.rawCategory) %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '&lang=' + currentLang : '' %>"
+                        class="group flex flex-col items-center justify-center text-center p-2 sm:p-2.5 md:p-3 hover:bg-[#13384c]/80 transition duration-150 relative <%= index >= 5 ? 'border-t border-amber-500/15 md:border-t-0' : '' %>"
+                        title="<%= cat.localizedName %> (<%= cat.count %>)"
+                    >
+                        <% if (cat.icon) { %>
+                            <div class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center mb-1 sm:mb-1.5 transition-transform duration-200 group-hover:scale-110">
+                                <img 
+                                    src="<%= cat.icon %>" 
+                                    alt="<%= cat.localizedName %>" 
+                                    class="w-full h-full object-contain filter drop-shadow-sm brightness-105"
+                                    loading="lazy"
+                                >
+                            </div>
+                        <% } %>
+                        <span class="text-[9px] sm:text-[10px] md:text-[10.5px] lg:text-[11px] font-bold text-amber-100/90 group-hover:text-amber-300 uppercase tracking-tight leading-tight line-clamp-2 transition-colors">
+                            <%= cat.localizedName %>
+                        </span>
+                        <% if (cat.count > 0) { %>
+                            <span class="hidden group-hover:inline-block absolute top-1 right-1 text-[8px] px-1 rounded-full bg-amber-400/20 text-amber-200 font-semibold font-mono">
+                                <%= cat.count %>
+                            </span>
+                        <% } %>
+                    </a>
+                <% }) %>
+            </div>
+        </nav>
         <% } %>
-
-        <h1 class="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-gray-900 tracking-tight leading-snug mb-3">
-            <%- typeof heroTitle !== 'undefined' && heroTitle ? heroTitle : t('hero_default_title') %>
-        </h1>
-
-        <div class="text-sm sm:text-base text-gray-600 leading-relaxed max-w-3xl font-light">
-            <%- typeof heroContent !== 'undefined' && heroContent ? heroContent : t('hero_default_content') %>
-        </div>
     </header>
 
-    <!-- Featured Post (Compact Card) -->
+    <!-- Featured Post Section -->
     <% if (featuredPosts && featuredPosts.length > 0) { %>
-        <section class="mb-10">
-            <div class="flex items-center justify-between pb-2 mb-4 border-b border-gray-100">
-                <span class="text-xs font-bold uppercase tracking-wider text-emerald-800"><%= t('featured_section') %></span>
+        <section class="mb-12">
+            <div class="flex items-center justify-between pb-3 mb-6 border-b border-gray-200/80">
+                <h2 class="text-sm sm:text-base font-serif font-bold text-[#0c2a38] flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-xs bg-amber-500 rotate-45 shrink-0"></span>
+                    <span class="uppercase tracking-wider"><%= t('featured_section') %></span>
+                </h2>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                 <% featuredPosts.forEach(post => { %>
-                    <article class="p-5 rounded-xl bg-emerald-50/50 border border-emerald-100 hover:border-emerald-300 transition duration-150 flex flex-col justify-between">
+                    <article class="bg-white rounded-2xl border border-gray-200/80 hover:border-amber-500/40 shadow-xs hover:shadow-md transition-all duration-200 p-5 sm:p-6 flex flex-col justify-between group">
                         <div>
-                            <div class="flex items-center gap-2 text-[11px] text-emerald-800 font-medium mb-1.5">
-                                <span class="px-2 py-0.5 rounded bg-white text-emerald-900 border border-emerald-200 font-semibold"><%= post.category %></span>
+                            <div class="flex items-center gap-2 text-[11px] text-gray-500 font-medium mb-3">
+                                <span class="px-2.5 py-0.5 rounded-md bg-[#0c2a38] text-amber-200 border border-amber-500/20 font-bold text-[10px] tracking-wide">
+                                    <%= post.category %>
+                                </span>
                                 <span>•</span>
-                                <span><%= new Date(post.created_at).toLocaleDateString((typeof currentLang !== 'undefined' && currentLang === 'ar') ? 'ar-EG' : ((typeof currentLang !== 'undefined' && currentLang === 'fa') ? 'fa-IR' : ((typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en-US' : 'id-ID')), { day: 'numeric', month: 'short', year: 'numeric' }) %></span>
+                                <time datetime="<%= post.created_at %>">
+                                    <%= new Date(post.created_at).toLocaleDateString((typeof currentLang !== 'undefined' && currentLang === 'ar') ? 'ar-EG' : ((typeof currentLang !== 'undefined' && currentLang === 'fa') ? 'fa-IR' : ((typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en-US' : 'id-ID')), { day: 'numeric', month: 'short', year: 'numeric' }) %>
+                                </time>
                                 <span>•</span>
                                 <span><%= post.reading_time || 1 %> <%= t('min_read') %></span>
                             </div>
-                            <h2 class="text-base sm:text-lg font-serif font-bold text-gray-900 mb-1.5 hover:text-emerald-800 transition leading-snug">
+                            <h3 class="text-base sm:text-lg font-serif font-bold text-gray-900 mb-2 group-hover:text-[#0c2a38] transition leading-snug">
                                 <a href="/blog/<%= post.slug %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>"><%= post.title %></a>
-                            </h2>
-                            <p class="text-gray-600 text-xs sm:text-sm leading-relaxed line-clamp-2 mb-3">
-                                <%= post.meta_description || post.content.replace(/<[^>]+>/g, '').substring(0, 130) + '...' %>
+                            </h3>
+                            <p class="text-gray-600 text-xs sm:text-sm leading-relaxed line-clamp-3 mb-4 font-light">
+                                <%= post.meta_description || post.content.replace(/<[^>]+>/g, '').substring(0, 140) + '...' %>
                             </p>
                         </div>
-                        <a href="/blog/<%= post.slug %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="inline-flex items-center text-xs font-bold text-emerald-800 hover:text-emerald-900 gap-1">
-                            <%= t('read_more') %> →
-                        </a>
+                        <div class="pt-3 border-t border-gray-100 flex items-center justify-between">
+                            <a href="/blog/<%= post.slug %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="inline-flex items-center text-xs font-bold text-[#0c2a38] group-hover:text-emerald-800 transition gap-1 group-hover:translate-x-1 duration-150">
+                                <span><%= t('read_more') %></span>
+                                <span>→</span>
+                            </a>
+                        </div>
                     </article>
                 <% }) %>
             </div>
         </section>
     <% } %>
 
-    <!-- Recent Articles (Compact Stream) -->
+    <!-- Recent Articles Section -->
     <section>
-        <div class="flex items-center justify-between pb-2.5 border-b border-gray-100 mb-4">
-            <h2 class="text-base font-serif font-bold text-gray-900"><%= t('recent_section') %></h2>
-            <a href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="text-xs font-semibold text-emerald-800 hover:underline">
+        <div class="flex items-center justify-between pb-3 mb-6 border-b border-gray-200/80">
+            <h2 class="text-sm sm:text-base font-serif font-bold text-[#0c2a38] flex items-center gap-2">
+                <span class="w-2 h-2 rounded-xs bg-amber-500 rotate-45 shrink-0"></span>
+                <span class="uppercase tracking-wider"><%= t('recent_section') %></span>
+            </h2>
+            <a href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="text-xs font-bold text-[#0c2a38] hover:text-emerald-800 transition">
                 <%= t('all_articles') %> →
             </a>
         </div>
 
-        <div class="divide-y divide-gray-100">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
             <% if (recentPosts && recentPosts.length > 0) { %>
                 <% recentPosts.forEach(post => { %>
-                    <article class="py-4 first:pt-0 group">
-                        <div class="flex items-center gap-2 text-xs text-gray-400 mb-1">
-                            <span class="text-emerald-800 font-semibold"><%= post.category || 'Kajian' %></span>
-                            <span>•</span>
-                            <time datetime="<%= post.created_at %>"><%= new Date(post.created_at).toLocaleDateString((typeof currentLang !== 'undefined' && currentLang === 'ar') ? 'ar-EG' : ((typeof currentLang !== 'undefined' && currentLang === 'fa') ? 'fa-IR' : ((typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en-US' : 'id-ID')), { day: 'numeric', month: 'short', year: 'numeric' }) %></time>
-                            <span>•</span>
-                            <span><%= post.reading_time || 1 %> <%= t('min_read') %></span>
+                    <article class="bg-white rounded-2xl border border-gray-200/80 hover:border-amber-500/40 shadow-xs hover:shadow-md transition-all duration-200 p-5 sm:p-6 flex flex-col justify-between group">
+                        <div>
+                            <div class="flex items-center gap-2 text-[11px] text-gray-500 font-medium mb-3">
+                                <span class="px-2.5 py-0.5 rounded-md bg-[#0c2a38] text-amber-200 border border-amber-500/20 font-bold text-[10px] tracking-wide">
+                                    <%= post.category || 'Kajian' %>
+                                </span>
+                                <span>•</span>
+                                <time datetime="<%= post.created_at %>">
+                                    <%= new Date(post.created_at).toLocaleDateString((typeof currentLang !== 'undefined' && currentLang === 'ar') ? 'ar-EG' : ((typeof currentLang !== 'undefined' && currentLang === 'fa') ? 'fa-IR' : ((typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en-US' : 'id-ID')), { day: 'numeric', month: 'short', year: 'numeric' }) %>
+                                </time>
+                                <span>•</span>
+                                <span><%= post.reading_time || 1 %> <%= t('min_read') %></span>
+                            </div>
+
+                            <h3 class="text-base sm:text-lg font-serif font-bold text-gray-900 mb-2 group-hover:text-[#0c2a38] transition leading-snug">
+                                <a href="/blog/<%= post.slug %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>">
+                                    <%= post.title %>
+                                </a>
+                            </h3>
+
+                            <p class="text-gray-600 text-xs sm:text-sm leading-relaxed line-clamp-3 mb-4 font-light">
+                                <%= post.meta_description || post.content.replace(/<[^>]+>/g, '').substring(0, 140) + '...' %>
+                            </p>
                         </div>
 
-                        <h3 class="text-base sm:text-lg font-serif font-bold text-gray-900 mb-1 group-hover:text-emerald-800 transition leading-snug">
-                            <a href="/blog/<%= post.slug %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>">
-                                <%= post.title %>
+                        <div class="pt-3 border-t border-gray-100 flex items-center justify-between">
+                            <a href="/blog/<%= post.slug %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="inline-flex items-center text-xs font-bold text-[#0c2a38] group-hover:text-emerald-800 transition gap-1 group-hover:translate-x-1 duration-150">
+                                <span><%= t('read_more') %></span>
+                                <span>→</span>
                             </a>
-                        </h3>
-
-                        <p class="text-gray-600 text-xs sm:text-sm leading-relaxed line-clamp-2 mb-2">
-                            <%= post.meta_description || post.content.replace(/<[^>]+>/g, '').substring(0, 140) + '...' %>
-                        </p>
-
-                        <a href="/blog/<%= post.slug %><%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="inline-flex items-center text-xs font-semibold text-emerald-800 hover:underline">
-                            <%= t('read_more') %> →
-                        </a>
+                        </div>
                     </article>
                 <% }) %>
             <% } else { %>
-                <div class="text-center py-8 text-gray-400 text-xs">
+                <div class="col-span-2 text-center py-12 text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200 text-xs">
                     <%= t('no_articles_yet') %>
                 </div>
             <% } %>
         </div>
 
-        <div class="mt-8 pt-4 border-t border-gray-100 text-center">
-            <a href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="inline-flex items-center px-5 py-2 rounded-lg border border-emerald-800 text-emerald-800 hover:bg-emerald-800 hover:text-white font-semibold text-xs transition">
-                <%= t('all_articles') %> (<%= totalPosts %>)
+        <div class="mt-10 text-center">
+            <a href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="inline-flex items-center px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#0c2a38] to-[#071c26] text-amber-200 border border-amber-500/30 hover:brightness-110 font-bold text-xs shadow-md transition-all">
+                <%= t('all_articles') %> (<%= totalPosts %>) →
             </a>
         </div>
     </section>

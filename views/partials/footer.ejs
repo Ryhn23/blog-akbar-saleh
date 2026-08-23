@@ -1,10 +1,47 @@
     </main>
 
-    <!-- Footer: Super Minimal Clean -->
-    <footer class="bg-white border-t border-gray-100 mt-12 py-6">
+    <!-- Harmonized Luxury Footer -->
+    <footer class="bg-gradient-to-b from-[#0c2a38] to-[#061822] text-amber-100 border-t border-amber-500/20 mt-16 pt-12 pb-8">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-center items-center text-xs text-gray-400 text-center">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-amber-500/15">
+                
+                <!-- Brand & Tagline -->
+                <div class="flex flex-col items-center md:items-start text-center md:text-left">
+                    <span class="font-serif font-bold text-xl sm:text-2xl text-amber-200 tracking-tight">
+                        <%= siteName %>
+                    </span>
+                    <span class="text-xs text-amber-100/70 font-medium tracking-wide mt-0.5">
+                        <%= siteTagline %>
+                    </span>
+                    <span class="text-[11px] text-amber-200/50 mt-1">
+                        Pondok Pesantren Khatamun Nabiyyin Jakarta
+                    </span>
+                </div>
+
+                <!-- Quick Navigation Links -->
+                <nav class="flex items-center flex-wrap justify-center gap-4 sm:gap-6 text-xs font-semibold text-amber-100/90">
+                    <a href="/<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="hover:text-amber-300 transition">
+                        <%= typeof t !== 'undefined' ? t('nav_home') : 'Beranda' %>
+                    </a>
+                    <span>•</span>
+                    <a href="/blog<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="hover:text-amber-300 transition">
+                        <%= typeof t !== 'undefined' ? t('nav_blog') : 'Kajian & Tulisan' %>
+                    </a>
+                    <span>•</span>
+                    <a href="/about<%= (typeof currentLang !== 'undefined' && currentLang !== 'id') ? '?lang=' + currentLang : '' %>" class="hover:text-amber-300 transition">
+                        <%= typeof t !== 'undefined' ? t('nav_about') : 'Tentang' %>
+                    </a>
+                    <span>•</span>
+                    <a href="/rss.xml" target="_blank" class="hover:text-amber-300 transition inline-flex items-center gap-1">
+                        <span>RSS</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Copyright -->
+            <div class="pt-6 flex flex-col sm:flex-row items-center justify-between text-[11px] text-amber-200/50 gap-2 text-center sm:text-left">
                 <p>&copy; <%= new Date().getFullYear() %> <%= siteName %>. <%= typeof t !== 'undefined' ? t('copyright_notice') : 'Seluruh Hak Cipta Dilindungi.' %></p>
+                <p class="font-mono text-[10px]">Al-Hikmah & Al-Ma'rifah</p>
             </div>
         </div>
     </footer>
