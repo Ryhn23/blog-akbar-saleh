@@ -175,9 +175,19 @@
                                         <span class="font-bold text-gray-900 block">English (EN)</span>
                                         <span class="text-[10px] text-gray-500"><%= transMap.en ? 'Tersedia' : 'Belum diterjemahkan' %></span>
                                     </div>
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold <%= transMap.en ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500' %>">
-                                        <%= transMap.en ? 'Siap' : 'Draf' %>
-                                    </span>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold <%= transMap.en ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500' %>">
+                                            <%= transMap.en ? 'Siap' : 'Draf' %>
+                                        </span>
+                                        <form action="/admin/posts/<%= post.id %>/retranslate" method="POST" class="inline-block" onsubmit="return confirm('Terjemahkan ulang versi Bahasa Inggris (EN) saja?');">
+                                            <input type="hidden" name="lang" value="en">
+                                            <button type="submit" class="p-1 rounded text-gray-400 hover:text-emerald-700 hover:bg-emerald-50 transition cursor-pointer" title="Terjemahkan / Reset Bahasa Inggris (EN)">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
 
                                 <!-- Arabic -->
@@ -186,9 +196,19 @@
                                         <span class="font-bold text-gray-900 block font-serif">العربية (AR)</span>
                                         <span class="text-[10px] text-gray-500"><%= transMap.ar ? 'Tersedia' : 'Belum diterjemahkan' %></span>
                                     </div>
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold <%= transMap.ar ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500' %>">
-                                        <%= transMap.ar ? 'Siap' : 'Draf' %>
-                                    </span>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold <%= transMap.ar ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500' %>">
+                                            <%= transMap.ar ? 'Siap' : 'Draf' %>
+                                        </span>
+                                        <form action="/admin/posts/<%= post.id %>/retranslate" method="POST" class="inline-block" onsubmit="return confirm('Terjemahkan ulang versi Bahasa Arab (AR) saja?');">
+                                            <input type="hidden" name="lang" value="ar">
+                                            <button type="submit" class="p-1 rounded text-gray-400 hover:text-emerald-700 hover:bg-emerald-50 transition cursor-pointer" title="Terjemahkan / Reset Bahasa Arab (AR)">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
 
                                 <!-- Persian -->
@@ -197,9 +217,19 @@
                                         <span class="font-bold text-gray-900 block font-serif">فارسی (FA)</span>
                                         <span class="text-[10px] text-gray-500"><%= transMap.fa ? 'Tersedia' : 'Belum diterjemahkan' %></span>
                                     </div>
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold <%= transMap.fa ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500' %>">
-                                        <%= transMap.fa ? 'Siap' : 'Draf' %>
-                                    </span>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold <%= transMap.fa ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500' %>">
+                                            <%= transMap.fa ? 'Siap' : 'Draf' %>
+                                        </span>
+                                        <form action="/admin/posts/<%= post.id %>/retranslate" method="POST" class="inline-block" onsubmit="return confirm('Terjemahkan ulang versi Bahasa Persia (FA) saja?');">
+                                            <input type="hidden" name="lang" value="fa">
+                                            <button type="submit" class="p-1 rounded text-gray-400 hover:text-emerald-700 hover:bg-emerald-50 transition cursor-pointer" title="Terjemahkan / Reset Bahasa Persia (FA)">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                             <div id="translateProgressMsg" class="hidden mt-2.5 text-[11px] text-emerald-800 font-medium"></div>

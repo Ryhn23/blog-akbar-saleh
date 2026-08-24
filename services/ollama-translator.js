@@ -1289,15 +1289,15 @@ async function translatePostAllLanguages(post) {
 }
 
 /**
- * Enqueues a post ID for background Ahead-of-Time pre-translation
+ * Enqueues a post ID for background Ahead-of-Time pre-translation (optionally for a specific language)
  */
-function queuePostPretranslation(postId) {
+function queuePostPretranslation(postId, targetLang = null) {
   if (!postId) return;
-  const jobKey = `post:${postId}`;
+  const jobKey = targetLang ? `post:${postId}:${targetLang}` : `post:${postId}`;
   if (activeJobKeys.has(jobKey)) return;
 
   activeJobKeys.add(jobKey);
-  pretranslationQueue.push({ type: 'post', id: postId, key: jobKey });
+  pretranslationQueue.push({ type: 'post', id: postId, lang: targetLang, key: jobKey });
   processPretranslationQueue();
 }
 
@@ -1334,7 +1334,7 @@ async function processPretranslationQueue() {
             cat: post.category || ''
           });
 
-          const foreignLangs = ['en', 'ar', 'fa'];
+          const foreignLangs = job.lang ? [job.lang] : ['en', 'ar', 'fa'];
           for (const lang of foreignLangs) {
             const cached = getPostTranslation(post.id, lang, sourceHash);
             if (!cached || !cached.title || cached.title === post.title) {

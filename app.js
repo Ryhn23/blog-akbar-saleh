@@ -1304,13 +1304,18 @@ app.post('/admin/posts/:id/retranslate', requireAuth, (req, res) => {
   const post = getOne('SELECT * FROM posts WHERE id = ?', [req.params.id]);
   if (!post) return res.status(404).send('Artikel tidak ditemukan');
 
-  // Purge existing foreign translation rows for this post from SQLite
-  run("DELETE FROM post_translations WHERE post_id = ? AND lang_code IN ('en', 'ar', 'fa')", [post.id]);
+  const lang = req.body.lang || req.query.lang;
+  if (lang && ['en', 'ar', 'fa'].includes(lang)) {
+    // Purge specific language only
+    run("DELETE FROM post_translations WHERE post_id = ? AND lang_code = ?", [post.id, lang]);
+    queuePostPretranslation(post.id, lang);
+  } else {
+    // Purge all foreign languages
+    run("DELETE FROM post_translations WHERE post_id = ? AND lang_code IN ('en', 'ar', 'fa')", [post.id]);
+    queuePostPretranslation(post.id);
+  }
 
-  // Queue to background worker
-  queuePostPretranslation(post.id);
-
-  res.redirect('/admin');
+  res.redirect(req.get('Referrer') || '/admin');
 });
 
 // Admin Ollama Translation Trigger Endpoint
