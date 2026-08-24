@@ -1011,46 +1011,42 @@ function extractHtmlFromLlmResponse(rawContent) {
 }
 
 /**
- * Translates a single section/chunk of HTML content
+ * Extracts all components of a translated post from structured XML-like delimiter tags
  */
-async function translateSectionChunk(chunkHtml, langConfig, sectionIndex, totalSections) {
-  const systemPrompt = `You are a distinguished academic translator specializing in Islamic studies, classical jurisprudence (fiqh), philosophy, and religious literature.
-Your task is to translate an Indonesian Islamic scholarly text segment into ${langConfig.promptTarget}.
+function extractFullPostTranslation(rawContent) {
+  if (!rawContent) return null;
+  const text = rawContent.trim();
 
-CRITICAL RULES:
-1. Preserve ALL HTML tags, attributes, formatting, headings, lists, blockquotes, and link anchors EXACTLY as structured.
-2. Translate ONLY the human-readable text inside the HTML elements.
-3. ${CONTEXTUAL_TRANSLATION_GUIDELINES}
-4. Return the translated HTML directly wrapped inside <translated_content> and </translated_content> tags.
-Do NOT output markdown fences or commentary outside the tags.`;
+  const titleMatch = text.match(/<translated_title>([\s\S]*?)<\/translated_title>/i);
+  const metaMatch = text.match(/<translated_meta>([\s\S]*?)<\/translated_meta>/i);
+  const catMatch = text.match(/<translated_category>([\s\S]*?)<\/translated_category>/i);
+  const contentMatch = text.match(/<translated_content>([\s\S]*?)<\/translated_content>/i);
 
-  const userPrompt = `Translate segment [${sectionIndex + 1}/${totalSections}] from Indonesian to ${langConfig.name}:
-
-<translated_content>
-${chunkHtml}
-</translated_content>`;
-
-  const payload = {
-    model: OLLAMA_MODEL,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt }
-    ],
-    stream: false,
-    options: {
-      temperature: 0.2,
-      top_p: 0.9
-    }
-  };
-
-  const data = await callOllamaWithRetry(payload, 3, 3000);
-  const extractedHtml = extractHtmlFromLlmResponse(data.message?.content);
-
-  if (!extractedHtml || extractedHtml.trim().length === 0) {
-    throw new Error(`Ekstraksi terjemahan kosong untuk segmen ${sectionIndex + 1}/${totalSections}`);
+  if (titleMatch && contentMatch && titleMatch[1].trim() && contentMatch[1].trim()) {
+    return {
+      title: titleMatch[1].trim().replace(/^["']|["']$/g, ''),
+      meta_description: (metaMatch ? metaMatch[1].trim() : '').replace(/^["']|["']$/g, ''),
+      category: (catMatch ? catMatch[1].trim() : '').replace(/^["']|["']$/g, ''),
+      content: contentMatch[1].trim()
+    };
   }
 
-  return extractedHtml;
+  // Fallback: If returned as JSON wrapper
+  if (text.startsWith('{') || text.includes('{"')) {
+    try {
+      const parsed = extractJsonFromLlmResponse(text);
+      if (parsed && (parsed.title || parsed.translated_title) && (parsed.content || parsed.translated_html || parsed.translated_content)) {
+        return {
+          title: (parsed.translated_title || parsed.title).trim(),
+          meta_description: (parsed.translated_meta || parsed.meta_description || '').trim(),
+          category: (parsed.translated_category || parsed.category || '').trim(),
+          content: (parsed.translated_content || parsed.translated_html || parsed.content).trim()
+        };
+      }
+    } catch (_) {}
+  }
+
+  return null;
 }
 
 // In-Flight Promise Cache (Single-Flight Request Deduplication)
@@ -1063,7 +1059,7 @@ let isQueueProcessing = false;
 const activeJobKeys = new Set();
 
 /**
- * Translates a full post (with section chunking if long & Single-Flight Deduplication)
+ * Translates a full post in ONE single unified API call per language
  */
 async function translatePostToLanguage(post, targetLang) {
   if (!post || !post.title || !post.content) {
@@ -1089,102 +1085,71 @@ async function translatePostToLanguage(post, targetLang) {
   }
 
   const flightPromise = (async () => {
-    // 1. Translate Title, Meta Description & Category
-    const headerPrompt = `You are an academic translator. Translate the metadata of an Islamic scholarly article from Indonesian to ${langConfig.promptTarget}.
-${CONTEXTUAL_TRANSLATION_GUIDELINES}
-Output strictly a valid JSON object with:
-- "title": (string) Translated title
-- "meta_description": (string) Translated meta description summary
-- "category": (string) Translated category name`;
+    console.log(`[Ollama Translator] Translating post '${post.slug}' to ${targetLang} in 1 single unified request...`);
 
-    const headerUserPrompt = `Title: ${post.title}
-Category: ${post.category || 'Kajian Keislaman'}
-Meta Description: ${post.meta_description || ''}`;
+    const systemPrompt = `You are a distinguished academic translator specializing in Islamic studies, classical jurisprudence (fiqh), philosophy, and religious literature.
+Your task is to translate an Indonesian Islamic scholarly article into ${langConfig.promptTarget}.
 
-    const headerPayload = {
+CRITICAL RULES:
+1. Preserve ALL HTML tags, formatting, headings, lists, blockquotes, and link anchors EXACTLY as structured in the content.
+2. Translate ONLY the human-readable text inside the HTML elements.
+3. ${CONTEXTUAL_TRANSLATION_GUIDELINES}
+4. Output MUST format each translated component strictly inside these XML tags:
+<translated_title>Translated Title Here</translated_title>
+<translated_meta>Translated Meta Description / Excerpt Here</translated_meta>
+<translated_category>Translated Category Name Here</translated_category>
+<translated_content>
+Translated Full HTML Article Content Here
+</translated_content>
+Do NOT output any markdown code blocks, conversational filler, or commentary outside the tags.`;
+
+    const userPrompt = `ORIGINAL TITLE:
+${post.title}
+
+ORIGINAL CATEGORY:
+${post.category || 'Kajian'}
+
+ORIGINAL META DESCRIPTION:
+${post.meta_description || ''}
+
+ORIGINAL HTML CONTENT:
+${post.content}`;
+
+    const payload = {
       model: OLLAMA_MODEL,
       messages: [
-        { role: 'system', content: headerPrompt },
-        { role: 'user', content: headerUserPrompt }
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
       ],
       stream: false,
-      format: 'json',
-      options: { temperature: 0.2 }
+      options: {
+        temperature: 0.2,
+        top_p: 0.9
+      }
     };
 
-    let translatedMeta = {
-      title: '',
-      meta_description: post.meta_description || '',
-      category: post.category || 'Kajian'
-    };
+    const data = await callOllamaWithRetry(payload, 3, 4000);
+    const parsed = extractFullPostTranslation(data.message?.content);
 
-    try {
-      const metaData = await callOllamaWithRetry(headerPayload, 3, 2000);
-      const parsedMeta = extractJsonFromLlmResponse(metaData.message?.content);
-      if (parsedMeta && parsedMeta.title) {
-        translatedMeta = parsedMeta;
-      }
-    } catch (err) {
-      console.warn('[Ollama Translator] Metadata translation warning:', err.message);
+    if (!parsed || !parsed.title || !parsed.content) {
+      throw new Error(`Gagal mengekstrak terjemahan utuh untuk artikel '${post.slug}' ke ${targetLang}`);
     }
 
-    // Direct title fallback if JSON title failed or was identical to Indonesian
-    if (!translatedMeta.title || translatedMeta.title.trim() === post.title.trim()) {
-      try {
-        const directTitleRes = await callOllamaWithRetry({
-          model: OLLAMA_MODEL,
-          messages: [
-            { role: 'system', content: `Translate this article title from Indonesian into ${langConfig.promptTarget}. Output ONLY the translated title text, nothing else.` },
-            { role: 'user', content: post.title }
-          ],
-          stream: false,
-          options: { temperature: 0.2 }
-        }, 2, 2000);
-
-        const cleanTitle = (directTitleRes.message?.content || '').replace(/^["']|["']$/g, '').trim();
-        if (cleanTitle && cleanTitle !== post.title) {
-          translatedMeta.title = cleanTitle;
-        }
-      } catch (err) {
-        console.warn('[Ollama Translator] Direct title fallback warning:', err.message);
-      }
-    }
-
-    // 2. Translate Content with Section Sequence Segmentation (Chunking)
-    const sections = splitHtmlIntoSections(post.content, 7500);
-    console.log(`[Ollama Translator] Translating post '${post.slug}' in ${sections.length} section(s) to ${targetLang}...`);
-
-    const translatedSections = [];
-    for (let i = 0; i < sections.length; i++) {
-      if (i > 0) {
-        await sleep(1500); // 1.5s inter-chunk throttling delay to respect API rate limits
-      }
-      const translatedChunk = await translateSectionChunk(sections[i], langConfig, i, sections.length);
-      translatedSections.push(translatedChunk);
-    }
-
-    const fullTranslatedContent = translatedSections.join('');
-    const finalTitle = (translatedMeta.title || '').trim();
-
-    // Anti-Pollution Guard: Do not save to DB if title or content is still Indonesian
-    const isCorruptedTitle = !finalTitle || finalTitle === post.title;
-    const isCorruptedContent = !fullTranslatedContent || fullTranslatedContent === post.content;
-
-    if (isCorruptedTitle || isCorruptedContent) {
-      throw new Error(`[Anti-Pollution] Translation for post #${post.id} to ${targetLang} incomplete or corrupted. Aborting save.`);
+    // Anti-Pollution Guard: Do not save if title or content remains identical to Indonesian
+    if (parsed.title === post.title && parsed.content === post.content) {
+      throw new Error(`Terjemahan '${post.slug}' ke ${targetLang} masih identik dengan bahasa Indonesia.`);
     }
 
     const result = {
-      title: finalTitle,
-      meta_description: (translatedMeta.meta_description || post.meta_description || '').trim(),
-      category: (translatedMeta.category || post.category || 'Kajian').trim(),
-      content: fullTranslatedContent.trim(),
-      reading_time: calculateReadingTime(fullTranslatedContent),
+      title: parsed.title,
+      meta_description: parsed.meta_description || (post.meta_description || '').trim(),
+      category: parsed.category || (post.category || 'Kajian').trim(),
+      content: parsed.content,
+      reading_time: calculateReadingTime(parsed.content),
       lang_code: targetLang,
       source_hash: sourceHash
     };
 
-    // Save into database cache
     if (post.id) {
       savePostTranslation(post.id, targetLang, result, sourceHash);
     }
@@ -1253,10 +1218,10 @@ async function translatePageToLanguage(pageSlug, pageData, targetLang) {
     const systemPrompt = `You are an academic translator. Translate this website page content from Indonesian into ${langConfig.promptTarget}.
 Preserve all HTML formatting tags (<p>, <strong>, <em>, <a>, <ul>, <li>).
 ${CONTEXTUAL_TRANSLATION_GUIDELINES}
-Output strictly a valid JSON object with:
-- "title": (string) Translated page title
-- "subtitle": (string) Translated page subtitle
-- "content": (string) Translated HTML content`;
+Output strictly inside XML tags:
+<translated_title>Translated Title</translated_title>
+<translated_subtitle>Translated Subtitle</translated_subtitle>
+<translated_content>Translated HTML Content</translated_content>`;
 
     const userPrompt = `Page: ${pageSlug}
 Title: ${pageData.title || ''}
@@ -1271,17 +1236,20 @@ ${pageData.content || ''}`;
         { role: 'user', content: userPrompt }
       ],
       stream: false,
-      format: 'json',
       options: { temperature: 0.2 }
     };
 
-    const data = await callOllamaWithRetry(payload, 3, 2000);
-    const parsed = extractJsonFromLlmResponse(data.message?.content);
+    const data = await callOllamaWithRetry(payload, 3, 3000);
+    const text = (data.message?.content || '').trim();
+
+    const tMatch = text.match(/<translated_title>([\s\S]*?)<\/translated_title>/i);
+    const sMatch = text.match(/<translated_subtitle>([\s\S]*?)<\/translated_subtitle>/i);
+    const cMatch = text.match(/<translated_content>([\s\S]*?)<\/translated_content>/i);
 
     const result = {
-      title: (parsed?.title || pageData.title).trim(),
-      subtitle: (parsed?.subtitle || pageData.subtitle || '').trim(),
-      content: (parsed?.content || pageData.content).trim(),
+      title: (tMatch ? tMatch[1].trim() : pageData.title).trim(),
+      subtitle: (sMatch ? sMatch[1].trim() : (pageData.subtitle || '')).trim(),
+      content: (cMatch ? cMatch[1].trim() : pageData.content).trim(),
       lang_code: targetLang,
       source_hash: sourceHash
     };
@@ -1299,7 +1267,7 @@ ${pageData.content || ''}`;
 }
 
 /**
- * Translates a post to all foreign languages (en, ar, fa)
+ * Translates a post to all foreign languages (en, ar, fa) sequentially
  */
 async function translatePostAllLanguages(post) {
   const results = {};
@@ -1310,7 +1278,7 @@ async function translatePostAllLanguages(post) {
       console.log(`[Ollama Translator] Translating post #${post.id} (${post.slug}) to ${lang}...`);
       const res = await translatePostToLanguage(post, lang);
       results[lang] = { success: true, data: res };
-      await sleep(2000); // 2s pause between language translations
+      await sleep(4000); // 4s calm pause between languages
     } catch (err) {
       console.error(`[Ollama Translator] Error translating to ${lang}:`, err.message);
       results[lang] = { success: false, error: err.message };
@@ -1347,7 +1315,7 @@ function queuePagePretranslation(pageSlug) {
 }
 
 /**
- * Worker process that translates items sequentially in the background with rate-limiting pauses
+ * Worker process that translates items strictly ONE by ONE with calm 5-second delays and 30-second cooldown on error
  */
 async function processPretranslationQueue() {
   if (isQueueProcessing || pretranslationQueue.length === 0) return;
@@ -1371,12 +1339,8 @@ async function processPretranslationQueue() {
             const cached = getPostTranslation(post.id, lang, sourceHash);
             if (!cached || !cached.title || cached.title === post.title) {
               console.log(`[AOT Worker] Background translating post #${post.id} (${post.slug}) to ${lang}...`);
-              try {
-                await translatePostToLanguage(post, lang);
-              } catch (transErr) {
-                console.warn(`[AOT Worker] Post #${post.id} to ${lang} failed (${transErr.message}), will retry on next queue cycle.`);
-              }
-              await sleep(2500); // 2.5s gentle throttling pause between language requests
+              await translatePostToLanguage(post, lang);
+              await sleep(5000); // 5s calm pause between languages
             }
           }
         }
@@ -1393,19 +1357,15 @@ async function processPretranslationQueue() {
             const cached = getPageTranslation(job.slug, lang, pageHash);
             if (!cached || !cached.title) {
               console.log(`[AOT Worker] Background translating page '${job.slug}' to ${lang}...`);
-              try {
-                await translatePageToLanguage(job.slug, page, lang);
-              } catch (pErr) {
-                console.warn(`[AOT Worker] Page '${job.slug}' to ${lang} failed (${pErr.message})`);
-              }
-              await sleep(2500);
+              await translatePageToLanguage(job.slug, page, lang);
+              await sleep(5000);
             }
           }
         }
       }
     } catch (err) {
-      console.error(`[AOT Worker] Error processing background job ${job.key}:`, err.message);
-      await sleep(5000); // 5s cooldown on error
+      console.error(`[AOT Worker] Background job ${job.key} failed (${err.message}). Cooling down for 30s before next job...`);
+      await sleep(30000); // 30-second cooldown so Ollama can recover from overload
     } finally {
       activeJobKeys.delete(job.key);
     }
