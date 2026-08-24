@@ -1011,6 +1011,73 @@ function extractHtmlFromLlmResponse(rawContent) {
 }
 
 /**
+ * Shields Arabic script segments (Quranic verses, Hadith, and Arabic quotes)
+ * with placeholder tokens so that LLMs cannot alter, garble, or corrupt them.
+ */
+function shieldArabicBlocks(html) {
+  if (!html) return { shieldedHtml: '', arabicBlocks: [] };
+  const arabicBlocks = [];
+  const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u06D6-\u06ED]+(?:[\s\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u06D6-\u06ED\u0660-\u0669\u06F0-\u06F9۝۞۩\.,;:!?\(\)\[\]"'\-–—]+[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u06D6-\u06ED]+)*/g;
+
+  const shieldedHtml = html.replace(arabicRegex, (match) => {
+    if (match.trim().length >= 4) {
+      const token = `__ARABIC_TOKEN_${arabicBlocks.length}__`;
+      arabicBlocks.push(match);
+      return token;
+    }
+    return match;
+  });
+
+  return { shieldedHtml, arabicBlocks };
+}
+
+/**
+ * Restores shielded Arabic placeholders back with 100% exact original Arabic text
+ */
+function unshieldArabicBlocks(html, arabicBlocks) {
+  if (!html || !arabicBlocks || arabicBlocks.length === 0) return html;
+  let restored = html;
+  for (let i = 0; i < arabicBlocks.length; i++) {
+    const tokenRegex = new RegExp(`__ARABIC_TOKEN_${i}__|__arabic_token_${i}__|__ARABIC_BLOCK_${i}__`, 'gi');
+    restored = restored.replace(tokenRegex, arabicBlocks[i]);
+  }
+  return restored;
+}
+
+/**
+ * Normalizes translated HTML content: converts rogue Markdown back into standard semantic HTML
+ */
+function normalizeTranslatedHtml(html) {
+  if (!html) return '';
+  let text = html.trim();
+
+  // 1. Convert markdown blockquotes (> ...) to HTML <blockquote><p>...</p></blockquote>
+  text = text.replace(/(?:^|\r?\n)(>[^\r\n]*(?:\r?\n>[^\r\n]*)*)/g, (match, block) => {
+    const clean = block
+      .split(/\r?\n/)
+      .map(l => l.replace(/^>\s?/, '').trim())
+      .filter(Boolean)
+      .join(' ');
+    return `\n<blockquote><p>${clean}</p></blockquote>\n`;
+  });
+
+  // 2. Convert markdown headers (## ..., ### ...) to <h2>, <h3>
+  text = text.replace(/(?:^|\r?\n)##\s+([^\r\n]+)/g, '\n<h2>$1</h2>\n');
+  text = text.replace(/(?:^|\r?\n)###\s+([^\r\n]+)/g, '\n<h3>$1</h3>\n');
+
+  // 3. Convert markdown bold (**text**) to <strong>
+  text = text.replace(/\*\*([^*\r\n]+)\*\*/g, '<strong>$1</strong>');
+
+  // 4. Convert markdown italics (*text*) to <em>
+  text = text.replace(/(?<!\*)\*([^*\r\n]+)\*(?!\*)/g, '<em>$1</em>');
+
+  // 5. Clean empty paragraph tags
+  text = text.replace(/<p>\s*<\/p>/g, '');
+
+  return text.trim();
+}
+
+/**
  * Extracts all components of a translated post from structured XML-like delimiter tags
  */
 function extractFullPostTranslation(rawContent) {
@@ -1087,14 +1154,28 @@ async function translatePostToLanguage(post, targetLang) {
   const flightPromise = (async () => {
     console.log(`[Ollama Translator] Translating post '${post.slug}' to ${targetLang} in 1 single unified request...`);
 
+    // Shield Arabic text for non-Arabic target languages (en, fa) so LLM cannot alter or corrupt Quranic/Hadith Arabic
+    let contentToTranslate = post.content;
+    let shieldedArabicList = [];
+    if (targetLang !== 'ar') {
+      const shieldRes = shieldArabicBlocks(post.content);
+      contentToTranslate = shieldRes.shieldedHtml;
+      shieldedArabicList = shieldRes.arabicBlocks;
+    }
+
     const systemPrompt = `You are a distinguished academic translator specializing in Islamic studies, classical jurisprudence (fiqh), philosophy, and religious literature.
 Your task is to translate an Indonesian Islamic scholarly article into ${langConfig.promptTarget}.
 
-CRITICAL RULES:
-1. Preserve ALL HTML tags, formatting, headings, lists, blockquotes, and link anchors EXACTLY as structured in the content.
-2. Translate ONLY the human-readable text inside the HTML elements.
+CRITICAL PRESERVATION & FORMATTING RULES:
+1. OUTPUT STRICT HTML ONLY:
+   - NEVER use markdown syntax (DO NOT write '>', '##', '###', '**', '-', '1.').
+   - You MUST preserve all HTML tags EXACTLY as they appear in the original text: <p>, <h2>, <h3>, <blockquote>, <strong>, <em>, <ul>, <ol>, <li>, <a>, etc.
+   - Verse translations and author quotations MUST remain inside <blockquote><p>...</p></blockquote> tags.
+2. PRESERVATION OF SHIELDED PLACEHOLDERS:
+   - If you see placeholders like __ARABIC_TOKEN_0__, __ARABIC_TOKEN_1__, etc., KEEP THEM EXACTLY AS-IS in their original locations. Do NOT translate, modify, or remove them.
 3. ${CONTEXTUAL_TRANSLATION_GUIDELINES}
-4. Output MUST format each translated component strictly inside these XML tags:
+4. OUTPUT FORMAT:
+   Format each translated component strictly inside these XML tags:
 <translated_title>Translated Title Here</translated_title>
 <translated_meta>Translated Meta Description / Excerpt Here</translated_meta>
 <translated_category>Translated Category Name Here</translated_category>
@@ -1113,7 +1194,7 @@ ORIGINAL META DESCRIPTION:
 ${post.meta_description || ''}
 
 ORIGINAL HTML CONTENT:
-${post.content}`;
+${contentToTranslate}`;
 
     const payload = {
       model: OLLAMA_MODEL,
@@ -1135,8 +1216,15 @@ ${post.content}`;
       throw new Error(`Gagal mengekstrak terjemahan utuh untuk artikel '${post.slug}' ke ${targetLang}`);
     }
 
+    // Restore shielded Arabic text and normalize HTML
+    let finalContent = parsed.content;
+    if (shieldedArabicList.length > 0) {
+      finalContent = unshieldArabicBlocks(finalContent, shieldedArabicList);
+    }
+    finalContent = normalizeTranslatedHtml(finalContent);
+
     // Anti-Pollution Guard: Do not save if title or content remains identical to Indonesian
-    if (parsed.title === post.title && parsed.content === post.content) {
+    if (parsed.title === post.title && finalContent === post.content) {
       throw new Error(`Terjemahan '${post.slug}' ke ${targetLang} masih identik dengan bahasa Indonesia.`);
     }
 
@@ -1144,8 +1232,8 @@ ${post.content}`;
       title: parsed.title,
       meta_description: parsed.meta_description || (post.meta_description || '').trim(),
       category: parsed.category || (post.category || 'Kajian').trim(),
-      content: parsed.content,
-      reading_time: calculateReadingTime(parsed.content),
+      content: finalContent,
+      reading_time: calculateReadingTime(finalContent),
       lang_code: targetLang,
       source_hash: sourceHash
     };
