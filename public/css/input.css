@@ -232,12 +232,31 @@ body[dir="rtl"] .quill-content blockquote {
     text-align: right !important;
 }
 
+html[dir="rtl"] .quill-content blockquote p,
+html[dir="rtl"] .quill-content blockquote .latin-text,
+html[dir="rtl"] .quill-content blockquote p.latin-text,
+body[dir="rtl"] .quill-content blockquote p,
+body[dir="rtl"] .quill-content blockquote .latin-text,
+body[dir="rtl"] .quill-content blockquote p.latin-text {
+    direction: rtl !important;
+    text-align: right !important;
+    font-family: 'Amiri', 'Scheherazade New', 'Noto Naskh Arabic', serif !important;
+    font-size: 1.25rem !important;
+    line-height: 2.1 !important;
+    font-style: normal !important;
+    color: #0c2a38 !important;
+}
+
 html[dir="rtl"] .quill-content blockquote .quote-citation,
-body[dir="rtl"] .quill-content blockquote .quote-citation {
+html[dir="rtl"] .quill-content blockquote p.quote-citation,
+body[dir="rtl"] .quill-content blockquote .quote-citation,
+body[dir="rtl"] .quill-content blockquote p.quote-citation {
     direction: rtl !important;
     text-align: left !important;
     font-family: 'Amiri', 'Scheherazade New', serif !important;
-    font-size: 1.15rem !important;
+    font-size: 1.1rem !important;
+    font-style: normal !important;
+    font-weight: 700 !important;
 }
 
 /* Strict Alignment Support */

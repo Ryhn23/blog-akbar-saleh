@@ -925,6 +925,37 @@ ${JSON.stringify(catNames)}`;
 }
 
 /**
+ * Extracts and cleans HTML content from LLM response safely without JSON parsing errors
+ */
+function extractHtmlFromLlmResponse(rawContent) {
+  if (!rawContent) return '';
+  let text = rawContent.trim();
+
+  // 1. Extract from <translated_content> tags
+  const tagMatch = text.match(/<translated_content>([\s\S]*?)<\/translated_content>/i);
+  if (tagMatch && tagMatch[1].trim()) {
+    return tagMatch[1].trim();
+  }
+
+  // 2. Strip markdown fences if present
+  if (text.startsWith('```')) {
+    text = text.replace(/^```(?:html)?\s*/i, '').replace(/```\s*$/, '').trim();
+  }
+
+  // 3. Fallback: If returned as JSON object with key
+  if (text.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed.translated_html) return parsed.translated_html.trim();
+      if (parsed.content) return parsed.content.trim();
+      if (parsed.html) return parsed.html.trim();
+    } catch (_) {}
+  }
+
+  return text;
+}
+
+/**
  * Translates a single section/chunk of HTML content
  */
 async function translateSectionChunk(chunkHtml, langConfig, sectionIndex, totalSections) {
@@ -935,13 +966,14 @@ CRITICAL RULES:
 1. Preserve ALL HTML tags, attributes, formatting, headings, lists, blockquotes, and link anchors EXACTLY as structured.
 2. Translate ONLY the human-readable text inside the HTML elements.
 3. ${CONTEXTUAL_TRANSLATION_GUIDELINES}
-4. Output MUST BE strictly a valid JSON object with EXACTLY the following key:
-   - "translated_html": (string) Translated HTML content for this segment
-Do NOT include any commentary, notes, or text outside the JSON object.`;
+4. Return the translated HTML directly wrapped inside <translated_content> and </translated_content> tags.
+Do NOT output markdown fences or commentary outside the tags.`;
 
   const userPrompt = `Translate segment [${sectionIndex + 1}/${totalSections}] from Indonesian to ${langConfig.name}:
 
-${chunkHtml}`;
+<translated_content>
+${chunkHtml}
+</translated_content>`;
 
   const payload = {
     model: OLLAMA_MODEL,
@@ -950,7 +982,6 @@ ${chunkHtml}`;
       { role: 'user', content: userPrompt }
     ],
     stream: false,
-    format: 'json',
     options: {
       temperature: 0.2,
       top_p: 0.9
@@ -976,8 +1007,8 @@ ${chunkHtml}`;
     }
 
     const data = await response.json();
-    const parsed = extractJsonFromLlmResponse(data.message.content);
-    return parsed.translated_html || chunkHtml;
+    const extractedHtml = extractHtmlFromLlmResponse(data.message?.content);
+    return extractedHtml || chunkHtml;
   } catch (err) {
     clearTimeout(timeoutId);
     console.error(`[Ollama Translate] Section ${sectionIndex + 1} translation failed, falling back to original segment:`, err.message);
@@ -1048,7 +1079,7 @@ Meta Description: ${post.meta_description || ''}`;
     const headerTimeout = setTimeout(() => headerController.abort(), OLLAMA_TIMEOUT);
 
     let translatedMeta = {
-      title: post.title,
+      title: '',
       meta_description: post.meta_description || '',
       category: post.category || 'Kajian'
     };
@@ -1063,7 +1094,7 @@ Meta Description: ${post.meta_description || ''}`;
       clearTimeout(headerTimeout);
       if (metaRes.ok) {
         const metaData = await metaRes.json();
-        const parsedMeta = extractJsonFromLlmResponse(metaData.message.content);
+        const parsedMeta = extractJsonFromLlmResponse(metaData.message?.content);
         if (parsedMeta && parsedMeta.title) {
           translatedMeta = parsedMeta;
         }
@@ -1071,6 +1102,34 @@ Meta Description: ${post.meta_description || ''}`;
     } catch (err) {
       clearTimeout(headerTimeout);
       console.warn('[Ollama Translator] Metadata translation warning:', err.message);
+    }
+
+    // Direct title fallback if JSON title failed or was identical to Indonesian
+    if (!translatedMeta.title || translatedMeta.title.trim() === post.title.trim()) {
+      try {
+        const directTitleRes = await fetch(`${OLLAMA_HOST}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: OLLAMA_MODEL,
+            messages: [
+              { role: 'system', content: `Translate this article title from Indonesian into ${langConfig.promptTarget}. Output ONLY the translated title text, nothing else.` },
+              { role: 'user', content: post.title }
+            ],
+            stream: false,
+            options: { temperature: 0.2 }
+          })
+        });
+        if (directTitleRes.ok) {
+          const dData = await directTitleRes.json();
+          const cleanTitle = (dData.message?.content || '').replace(/^["']|["']$/g, '').trim();
+          if (cleanTitle && cleanTitle !== post.title) {
+            translatedMeta.title = cleanTitle;
+          }
+        }
+      } catch (err) {
+        console.warn('[Ollama Translator] Direct title fallback warning:', err.message);
+      }
     }
 
     // 2. Translate Content with Section Sequence Segmentation (Chunking)
@@ -1084,10 +1143,28 @@ Meta Description: ${post.meta_description || ''}`;
     }
 
     const fullTranslatedContent = translatedSections.join('');
+    const finalTitle = (translatedMeta.title || '').trim();
+
+    // Anti-Pollution Guard: Do not save to DB if title or content is still Indonesian
+    const isCorruptedTitle = !finalTitle || finalTitle === post.title;
+    const isCorruptedContent = !fullTranslatedContent || fullTranslatedContent === post.content;
+
+    if (isCorruptedTitle && isCorruptedContent) {
+      console.warn(`[Anti-Pollution] Translation for post #${post.id} to ${targetLang} returned unchanged Indonesian text. Skipping cache save.`);
+      return {
+        title: finalTitle || post.title,
+        meta_description: (translatedMeta.meta_description || post.meta_description || '').trim(),
+        category: (translatedMeta.category || post.category || 'Kajian').trim(),
+        content: fullTranslatedContent || post.content,
+        reading_time: calculateReadingTime(fullTranslatedContent || post.content),
+        lang_code: targetLang,
+        source_hash: sourceHash
+      };
+    }
 
     const result = {
-      title: translatedMeta.title.trim(),
-      meta_description: (translatedMeta.meta_description || '').trim(),
+      title: finalTitle || post.title,
+      meta_description: (translatedMeta.meta_description || post.meta_description || '').trim(),
       category: (translatedMeta.category || post.category || 'Kajian').trim(),
       content: fullTranslatedContent.trim(),
       reading_time: calculateReadingTime(fullTranslatedContent),
@@ -1095,8 +1172,8 @@ Meta Description: ${post.meta_description || ''}`;
       source_hash: sourceHash
     };
 
-    // Save / Cache in Database with Content Hash
-    if (post.id) {
+    // Save into database cache
+    if (post.id && !isCorruptedTitle) {
       savePostTranslation(post.id, targetLang, result, sourceHash);
     }
 
@@ -1125,7 +1202,7 @@ async function localizePostAsync(post, targetLang) {
   });
 
   const cached = getPostTranslation(post.id, targetLang, sourceHash);
-  if (cached && cached.title) {
+  if (cached && cached.title && cached.title !== post.title) {
     return {
       ...post,
       title: cached.title,
@@ -1135,7 +1212,7 @@ async function localizePostAsync(post, targetLang) {
     };
   }
 
-  // If not yet in cache, queue background translation and run single-flight fallback
+  // If not yet in cache or corrupted, queue background translation and run single-flight fallback
   queuePostPretranslation(post.id);
 
   try {
@@ -1314,7 +1391,7 @@ async function processPretranslationQueue() {
           const foreignLangs = ['en', 'ar', 'fa'];
           for (const lang of foreignLangs) {
             const cached = getPostTranslation(post.id, lang, sourceHash);
-            if (!cached || !cached.title) {
+            if (!cached || !cached.title || cached.title === post.title) {
               console.log(`[AOT Worker] Background translating post #${post.id} (${post.slug}) to ${lang}...`);
               await translatePostToLanguage(post, lang);
             }
@@ -1367,9 +1444,9 @@ function getTranslationStatus(postId) {
   const arTrans = getPostTranslation(postId, 'ar', sourceHash);
   const faTrans = getPostTranslation(postId, 'fa', sourceHash);
 
-  const en = Boolean(enTrans && enTrans.title);
-  const ar = Boolean(arTrans && arTrans.title);
-  const fa = Boolean(faTrans && faTrans.title);
+  const en = Boolean(enTrans && enTrans.title && enTrans.title !== post.title);
+  const ar = Boolean(arTrans && arTrans.title && arTrans.title !== post.title);
+  const fa = Boolean(faTrans && faTrans.title && faTrans.title !== post.title);
   const is_complete = en && ar && fa;
   const is_processing = activeJobKeys.has(`post:${postId}`);
 
@@ -1377,10 +1454,34 @@ function getTranslationStatus(postId) {
 }
 
 /**
- * Scans all published posts on server startup and warms up any missing translations
+ * Automatically purges any corrupted translations where foreign translation title equals Indonesian title
+ */
+function purgeCorruptedTranslations() {
+  try {
+    const { run } = require('../db');
+    run(`
+      DELETE FROM post_translations 
+      WHERE lang_code IN ('en', 'ar', 'fa') 
+      AND post_id IN (
+        SELECT pt.post_id 
+        FROM post_translations pt 
+        JOIN posts p ON p.id = pt.post_id 
+        WHERE pt.title = p.title AND pt.lang_code IN ('en', 'ar', 'fa')
+      )
+    `);
+    console.log('[AOT Worker] Corrupted translation cache purged successfully.');
+  } catch (err) {
+    console.warn('[AOT Worker] Purge warning:', err.message);
+  }
+}
+
+/**
+ * Scans all published posts on server startup, purges corrupt cache, and warms up missing translations
  */
 async function warmupTranslationCache() {
   try {
+    purgeCorruptedTranslations();
+
     const publishedPosts = getAll('SELECT id, slug FROM posts WHERE is_published = 1 AND is_hidden = 0 ORDER BY created_at DESC');
     if (publishedPosts && publishedPosts.length > 0) {
       console.log(`[AOT Warmup] Checking translation completeness for ${publishedPosts.length} published post(s)...`);
@@ -1408,6 +1509,7 @@ module.exports = {
   queuePostPretranslation,
   queuePagePretranslation,
   warmupTranslationCache,
+  purgeCorruptedTranslations,
   getTranslationStatus,
   computeContentHash
 };

@@ -47,6 +47,7 @@
         (function () {
             function formatArabicContent() {
                 const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+                const isRTLDoc = document.documentElement.getAttribute('dir') === 'rtl' || document.documentElement.getAttribute('lang') === 'ar' || document.documentElement.getAttribute('lang') === 'fa';
                 
                 document.querySelectorAll('.quill-content').forEach(function (container) {
                     // 1. Merge adjacent/consecutive blockquotes
@@ -97,15 +98,28 @@
                                     else if (/[a-zA-Z]/.test(text[c])) latinCount++;
                                 }
 
-                                if (arabicCount > 0 && (latinCount === 0 || arabicCount >= latinCount * 0.5)) {
-                                    p.className = 'arabic-text';
-                                    p.setAttribute('dir', 'rtl');
-                                } else if ((text.startsWith('(') && text.endsWith(')')) || text.startsWith('QS.') || text.startsWith('Surat') || text.includes('Nahj al-')) {
-                                    p.className = 'quote-citation';
-                                    p.setAttribute('dir', 'ltr');
+                                if (isRTLDoc) {
+                                    if (arabicCount > 0 && (latinCount === 0 || arabicCount >= latinCount * 0.5)) {
+                                        p.className = 'arabic-text';
+                                        p.setAttribute('dir', 'rtl');
+                                    } else if ((text.startsWith('(') && text.endsWith(')')) || text.includes('سوره') || text.includes('نهج') || text.startsWith('QS.')) {
+                                        p.className = 'quote-citation';
+                                        p.setAttribute('dir', 'rtl');
+                                    } else {
+                                        p.className = 'latin-text';
+                                        p.setAttribute('dir', 'rtl');
+                                    }
                                 } else {
-                                    p.className = 'latin-text';
-                                    p.setAttribute('dir', 'ltr');
+                                    if (arabicCount > 0 && (latinCount === 0 || arabicCount >= latinCount * 0.5)) {
+                                        p.className = 'arabic-text';
+                                        p.setAttribute('dir', 'rtl');
+                                    } else if ((text.startsWith('(') && text.endsWith(')')) || text.startsWith('QS.') || text.startsWith('Surat') || text.includes('Nahj al-')) {
+                                        p.className = 'quote-citation';
+                                        p.setAttribute('dir', (arabicCount > 0) ? 'rtl' : 'ltr');
+                                    } else {
+                                        p.className = 'latin-text';
+                                        p.setAttribute('dir', 'ltr');
+                                    }
                                 }
                                 bq.appendChild(p);
                             });
@@ -124,10 +138,17 @@
                             else if (/[a-zA-Z]/.test(text[c])) latinCount++;
                         }
 
-                        if (arabicCount > 0 && (latinCount === 0 || arabicCount >= latinCount * 0.5)) {
-                            el.classList.add('arabic-text');
-                            el.classList.remove('ql-align-center', 'text-center');
+                        if (isRTLDoc) {
                             el.setAttribute('dir', 'rtl');
+                            if (arabicCount > 0 && (latinCount === 0 || arabicCount >= latinCount * 0.5)) {
+                                el.classList.add('arabic-text');
+                            }
+                        } else {
+                            if (arabicCount > 0 && (latinCount === 0 || arabicCount >= latinCount * 0.5)) {
+                                el.classList.add('arabic-text');
+                                el.classList.remove('ql-align-center', 'text-center');
+                                el.setAttribute('dir', 'rtl');
+                            }
                         }
                     });
                 });
