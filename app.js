@@ -1305,7 +1305,7 @@ app.post('/admin/posts/:id/retranslate', requireAuth, (req, res) => {
   if (!post) return res.status(404).send('Artikel tidak ditemukan');
 
   // Purge existing foreign translation rows for this post from SQLite
-  run('DELETE FROM post_translations WHERE post_id = ? AND lang_code IN ("en", "ar", "fa")', [post.id]);
+  run("DELETE FROM post_translations WHERE post_id = ? AND lang_code IN ('en', 'ar', 'fa')", [post.id]);
 
   // Queue to background worker
   queuePostPretranslation(post.id);
