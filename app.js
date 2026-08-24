@@ -38,7 +38,11 @@ const {
   localizePostAsync,
   translatePostToLanguage, 
   translatePageToLanguage, 
-  translatePostAllLanguages 
+  translatePostAllLanguages,
+  queuePostPretranslation,
+  queuePagePretranslation,
+  warmupTranslationCache,
+  getTranslationStatus
 } = require('./services/ollama-translator');
 
 const app = express();
@@ -1219,7 +1223,11 @@ app.get('/admin', requireAuth, (req, res) => {
 
   sql += ' ORDER BY created_at DESC';
 
-  const posts = getAll(sql, params);
+  const rawPosts = getAll(sql, params);
+  const posts = rawPosts.map(p => ({
+    ...p,
+    translationStatus: getTranslationStatus(p.id)
+  }));
   const totalPosts = posts.length;
   const categoriesCount = getAll('SELECT DISTINCT category FROM posts').length;
 
@@ -1262,11 +1270,15 @@ app.post('/admin/posts', requireAuth, postUploadMiddleware, (req, res) => {
   const postCategory = category?.trim() || 'Kajian Keislaman';
 
   try {
-    run(
+    const insertResult = run(
       `INSERT INTO posts (title, slug, content, meta_description, category, cover_image, is_featured, is_published, is_hidden, reading_time, attachment_url, attachment_name, attachment_size)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [title, slug, content, meta_description, postCategory, cover_image, featured, published, hidden, reading_time, attachment_url, attachment_name, attachment_size]
     );
+    const newPostId = insertResult.lastInsertRowid;
+    if (newPostId) {
+      queuePostPretranslation(newPostId);
+    }
     res.redirect('/admin');
   } catch (error) {
     const categories = getAll('SELECT * FROM categories ORDER BY name ASC');
@@ -1468,6 +1480,7 @@ app.post('/admin/posts/:id', requireAuth, postUploadMiddleware, (req, res) => {
        WHERE id = ?`,
       [title, slug, content, meta_description, postCategory, cover_image, featured, published, hidden, reading_time, attachment_url, attachment_name, attachment_size, req.params.id]
     );
+    queuePostPretranslation(req.params.id);
     res.redirect('/admin');
   } catch (error) {
     res.status(400).render('admin/edit', {
@@ -1483,6 +1496,9 @@ app.post('/admin/posts/:id/toggle-publish', requireAuth, (req, res) => {
   if (post) {
     const newStatus = post.is_published === 1 ? 0 : 1;
     run('UPDATE posts SET is_published = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [newStatus, post.id]);
+    if (newStatus === 1) {
+      queuePostPretranslation(post.id);
+    }
   }
   res.redirect('/admin');
 });
@@ -1549,6 +1565,8 @@ app.post('/admin/about', requireAuth, (req, res) => {
     );
   }
 
+  queuePagePretranslation('about');
+
   const updatedPage = getOne('SELECT * FROM pages WHERE slug = ?', ['about']);
   res.render('admin/about', {
     page: updatedPage,
@@ -1569,57 +1587,42 @@ app.get('/admin/settings', requireAuth, (req, res) => {
 });
 
 app.post('/admin/settings/hero', requireAuth, (req, res) => {
-  const { hero_badge, hero_title, hero_content } = req.body;
-  const user = getOne('SELECT id, username, name, email, google_id, avatar FROM users WHERE id = ?', [req.session.userId]);
-
-  if (!hero_title || !hero_title.trim()) {
-    const homeHero = { subtitle: hero_badge, title: hero_title, content: hero_content };
-    return res.render('admin/settings', { user, homeHero, error: 'Judul utama beranda tidak boleh kosong.', success: null });
-  }
+  const { subtitle, title, content } = req.body;
+  const user = getOne('SELECT * FROM users WHERE id = ?', [req.session.userId]);
 
   const existing = getOne('SELECT id FROM pages WHERE slug = ?', ['home']);
   if (existing) {
-    run(
-      'UPDATE pages SET title = ?, subtitle = ?, content = ?, updated_at = CURRENT_TIMESTAMP WHERE slug = ?',
-      [hero_title.trim(), hero_badge?.trim() || '', hero_content?.trim() || '', 'home']
-    );
+    run('UPDATE pages SET subtitle = ?, title = ?, content = ?, updated_at = CURRENT_TIMESTAMP WHERE slug = ?', [subtitle, title, content, 'home']);
   } else {
-    run(
-      'INSERT INTO pages (slug, title, subtitle, content) VALUES (?, ?, ?, ?)',
-      ['home', hero_title.trim(), hero_badge?.trim() || '', hero_content?.trim() || '']
-    );
+    run('INSERT INTO pages (slug, subtitle, title, content) VALUES (?, ?, ?, ?)', ['home', subtitle, title, content]);
   }
 
-  const updatedHomeHero = getOne('SELECT * FROM pages WHERE slug = ?', ['home']);
+  const updatedHero = getOne('SELECT * FROM pages WHERE slug = ?', ['home']);
   res.render('admin/settings', {
     user,
-    homeHero: updatedHomeHero,
+    homeHero: updatedHero,
     error: null,
-    success: 'Tampilan Header Beranda berhasil diperbarui!'
+    success: 'Teks Banner Beranda berhasil diperbarui!'
   });
 });
 
-app.post('/admin/settings/profile', requireAuth, (req, res) => {
-  const { name, username, email } = req.body;
-  const user = getOne('SELECT id, username, name, email, google_id, avatar FROM users WHERE id = ?', [req.session.userId]);
+app.post('/admin/settings/profile', requireAuth, upload.single('avatar_file'), (req, res) => {
+  const { name, email } = req.body;
+  const user = getOne('SELECT * FROM users WHERE id = ?', [req.session.userId]);
   const homeHero = getOne('SELECT * FROM pages WHERE slug = ?', ['home']);
 
-  if (!username) {
-    return res.render('admin/settings', { user, homeHero, error: 'Username tidak boleh kosong.', success: null });
+  let avatar = user.avatar;
+  if (req.file) {
+    avatar = `/uploads/${req.file.filename}`;
   }
 
-  // Check username collision
-  const existing = getOne('SELECT id FROM users WHERE username = ? AND id != ?', [username, req.session.userId]);
-  if (existing) {
-    return res.render('admin/settings', { user, homeHero, error: 'Username sudah digunakan oleh akun lain.', success: null });
-  }
-
-  run('UPDATE users SET name = ?, username = ?, email = ? WHERE id = ?', [name, username, email?.trim() || null, req.session.userId]);
-  req.session.userName = name || username;
-  if (email) req.session.userEmail = email.trim();
-
-  const updatedUser = getOne('SELECT id, username, name, email, google_id, avatar FROM users WHERE id = ?', [req.session.userId]);
-  res.render('admin/settings', { user: updatedUser, homeHero, error: null, success: 'Profil dan email Google resmi berhasil diperbarui!' });
+  run('UPDATE users SET name = ?, email = ?, avatar = ? WHERE id = ?', [name.trim(), email.trim(), avatar, req.session.userId]);
+  res.render('admin/settings', {
+    user: { ...user, name, email, avatar },
+    homeHero,
+    error: null,
+    success: 'Profil berhasil diperbarui!'
+  });
 });
 
 app.post('/admin/settings/unbind-google', requireAuth, (req, res) => {
@@ -1671,8 +1674,10 @@ app.use((err, req, res, next) => {
 // Start Server
 app.listen(PORT, () => {
   console.log(`=========================================`);
-  console.log(`🚀 Blog Akbar Saleh berjalan di:`);
-  console.log(`   Local: http://localhost:${PORT}`);
-  console.log(`   Mode : ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Server Blog Akbar Saleh berjalan di port: ${PORT}`);
+  console.log(`Mode : ${process.env.NODE_ENV || 'development'}`);
   console.log(`=========================================`);
+  
+  // Warm up translation cache in background
+  warmupTranslationCache();
 });
