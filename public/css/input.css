@@ -181,8 +181,8 @@ body {
 }
 
 /* Latin translation text inside Blockquote */
-.quill-content blockquote p.latin-text,
-.quill-content blockquote p:not(.arabic-text):not(.quote-citation) {
+.quill-content blockquote .latin-text,
+.quill-content blockquote p.latin-text {
     direction: ltr !important;
     text-align: left !important;
     font-family: 'Merriweather', Georgia, serif !important;
@@ -190,6 +190,22 @@ body {
     line-height: 1.85 !important;
     font-style: italic !important;
     color: #1e293b !important;
+}
+
+/* Arabic verse / hadith inside Blockquote or anywhere */
+.arabic-text,
+.quill-content .arabic-text,
+.quill-content p.arabic-text,
+.quill-content blockquote .arabic-text,
+.quill-content blockquote p.arabic-text {
+    font-family: 'Amiri', 'Scheherazade New', 'Noto Naskh Arabic', 'Traditional Arabic', serif !important;
+    font-size: 1.6rem !important;
+    line-height: 2.4 !important;
+    direction: rtl !important;
+    text-align: right !important;
+    color: #0c2a38 !important;
+    font-style: normal !important;
+    font-weight: 500 !important;
 }
 
 /* Citation line inside Blockquote */
@@ -203,7 +219,7 @@ body {
     font-style: normal !important;
     color: #0c2a38 !important;
     margin-top: 0.75rem !important;
-    opacity: 0.9;
+    opacity: 0.9 !important;
 }
 
 /* RTL Page Support (When website is viewed in Arabic or Persian) */
