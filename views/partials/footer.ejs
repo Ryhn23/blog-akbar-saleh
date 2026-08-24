@@ -127,7 +127,8 @@
                     });
 
                     // 3. Process standalone elements outside blockquotes
-                    container.querySelectorAll(':scope > p, :scope > div, :scope > h1, :scope > h2, :scope > h3, :scope > h4, :scope > li').forEach(function (el) {
+                    container.querySelectorAll('p, div, h1, h2, h3, h4, li').forEach(function (el) {
+                        if (el.closest('blockquote')) return; // already formatted in blockquote pass
                         const text = el.textContent.trim();
                         if (!text) return;
 
@@ -142,12 +143,31 @@
                             el.setAttribute('dir', 'rtl');
                             if (arabicCount > 0 && (latinCount === 0 || arabicCount >= latinCount * 0.5)) {
                                 el.classList.add('arabic-text');
+                                el.style.fontFamily = '';
+                                el.querySelectorAll('span, em, strong, font').forEach(function(s) {
+                                    s.style.fontFamily = '';
+                                    s.classList.remove('ql-font-serif', 'ql-font-monospace');
+                                });
                             }
                         } else {
                             if (arabicCount > 0 && (latinCount === 0 || arabicCount >= latinCount * 0.5)) {
                                 el.classList.add('arabic-text');
                                 el.classList.remove('ql-align-center', 'text-center');
                                 el.setAttribute('dir', 'rtl');
+                                el.style.fontFamily = '';
+                                el.querySelectorAll('span, em, strong, font').forEach(function(s) {
+                                    s.style.fontFamily = '';
+                                    s.classList.remove('ql-font-serif', 'ql-font-monospace');
+                                });
+                            } else if (arabicCount > 0) {
+                                // Inline Arabic phrases inside mixed Latin paragraphs
+                                el.querySelectorAll('span').forEach(function(s) {
+                                    const sText = s.textContent.trim();
+                                    if (sText && arabicRegex.test(sText)) {
+                                        s.classList.add('arabic-inline');
+                                        s.style.fontFamily = '';
+                                    }
+                                });
                             }
                         }
                     });

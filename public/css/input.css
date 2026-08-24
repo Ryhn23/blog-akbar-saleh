@@ -39,9 +39,13 @@ body {
    ARABIC & SCHOLARLY TYPOGRAPHY SYSTEM
    ========================================================================== */
 .font-arabic,
+.font-arabic *,
 .arabic-text,
+.arabic-text *,
 .quill-content .arabic-text,
+.quill-content .arabic-text *,
 .quill-content p.arabic-text,
+.quill-content p.arabic-text *,
 .quill-content span.arabic-text {
     font-family: 'Amiri', 'Scheherazade New', 'Noto Naskh Arabic', 'Traditional Arabic', serif !important;
     font-size: 1.55rem !important;
