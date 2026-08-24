@@ -147,26 +147,92 @@ body {
     font-size: 1.075rem;
     line-height: 1.85;
     border-radius: 0 0.875rem 0.875rem 0;
-    margin: 2rem 0;
+    margin: 1.75rem 0;
     box-shadow: 0 2px 10px -2px rgba(12, 42, 56, 0.05);
     border-top: 1px solid rgba(245, 158, 11, 0.15);
     border-right: 1px solid rgba(245, 158, 11, 0.15);
     border-bottom: 1px solid rgba(245, 158, 11, 0.15);
 }
 
+/* Consecutive Adjacent Blockquotes Seamless Merging */
+.quill-content blockquote + blockquote {
+    margin-top: -1.75rem !important;
+    padding-top: 0.65rem !important;
+    border-top: none !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+    box-shadow: none !important;
+}
+.quill-content blockquote:has(+ blockquote) {
+    margin-bottom: 0 !important;
+    padding-bottom: 0.65rem !important;
+    border-bottom: none !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+/* Paragraphs & Lines inside Blockquote */
+.quill-content blockquote p {
+    margin-top: 0.35rem !important;
+    margin-bottom: 0.35rem !important;
+}
+.quill-content blockquote p:first-child {
+    margin-top: 0 !important;
+}
+.quill-content blockquote p:last-child {
+    margin-bottom: 0 !important;
+}
+
 /* RTL Blockquote (For Arabic quotes) */
 .quill-content blockquote[dir="rtl"],
 .quill-content blockquote.arabic-quote,
 [dir="rtl"] .quill-content blockquote {
-    border-left: 1px solid rgba(245, 158, 11, 0.15);
-    border-right: 4px solid #f59e0b;
-    border-radius: 0.875rem 0 0 0.875rem;
-    direction: rtl;
-    text-align: right;
+    border-left: 1px solid rgba(245, 158, 11, 0.15) !important;
+    border-right: 4px solid #f59e0b !important;
+    border-radius: 0.875rem 0 0 0.875rem !important;
+    direction: rtl !important;
+    text-align: right !important;
     font-family: 'Amiri', 'Scheherazade New', 'Noto Naskh Arabic', serif !important;
-    font-size: 1.35rem;
-    line-height: 2.2;
-    font-style: normal;
+    font-size: 1.45rem !important;
+    line-height: 2.3 !important;
+    font-style: normal !important;
+}
+
+/* RTL Consecutive Adjacent Blockquotes */
+.quill-content blockquote[dir="rtl"] + blockquote[dir="rtl"],
+.quill-content blockquote.arabic-quote + blockquote.arabic-quote,
+[dir="rtl"] .quill-content blockquote + blockquote {
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+}
+.quill-content blockquote[dir="rtl"]:has(+ blockquote[dir="rtl"]),
+.quill-content blockquote.arabic-quote:has(+ blockquote.arabic-quote),
+[dir="rtl"] .quill-content blockquote:has(+ blockquote) {
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+/* Strict Alignment Support */
+.quill-content .ql-align-center {
+    text-align: center;
+}
+.quill-content .ql-align-right {
+    text-align: right;
+}
+.quill-content .ql-align-justify {
+    text-align: justify;
+}
+
+/* Always force Right Alignment for Arabic / RTL quotes and verses */
+.arabic-text,
+.quill-content .arabic-text,
+.quill-content p.arabic-text,
+.quill-content [dir="rtl"],
+[dir="rtl"] .quill-content p,
+[dir="rtl"] .quill-content blockquote,
+[dir="rtl"] .quill-content .ql-align-center {
+    direction: rtl !important;
+    text-align: right !important;
 }
 
 .quill-content img {

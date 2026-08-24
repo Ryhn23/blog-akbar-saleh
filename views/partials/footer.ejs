@@ -42,12 +42,37 @@
         </div>
     </footer>
 
-    <!-- Global Arabic Text & RTL Script Detector -->
+    <!-- Global Arabic Text, RTL & Continuous Blockquote Merger -->
     <script>
         (function () {
             function formatArabicContent() {
                 const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
                 
+                // 1. Merge consecutive/adjacent blockquotes into a single unified block
+                document.querySelectorAll('.quill-content').forEach(function (container) {
+                    const blockquotes = Array.from(container.querySelectorAll('blockquote'));
+                    for (let i = 0; i < blockquotes.length; i++) {
+                        const currentBq = blockquotes[i];
+                        if (!currentBq.parentNode) continue;
+                        
+                        let next = currentBq.nextElementSibling;
+                        while (next && next.tagName && next.tagName.toLowerCase() === 'blockquote') {
+                            const nextSibling = next.nextElementSibling;
+                            const p = document.createElement('p');
+                            p.className = 'mt-2.5 mb-1.5 ' + (next.className || '');
+                            if (next.getAttribute('dir')) p.setAttribute('dir', next.getAttribute('dir'));
+                            
+                            while (next.firstChild) {
+                                p.appendChild(next.firstChild);
+                            }
+                            currentBq.appendChild(p);
+                            next.remove();
+                            next = nextSibling;
+                        }
+                    }
+                });
+
+                // 2. Auto-detect Arabic texts and enforce right-to-left alignment
                 document.querySelectorAll('.quill-content p, .quill-content blockquote, .quill-content li, .quill-content h1, .quill-content h2, .quill-content h3, .quill-content h4, .quill-content div').forEach(function (el) {
                     const text = el.textContent.trim();
                     if (!text) return;
@@ -71,6 +96,8 @@
                         } else {
                             el.classList.add('arabic-text');
                         }
+                        // Remove center alignment on Arabic quotes/verses so they align naturally to the right
+                        el.classList.remove('ql-align-center', 'text-center');
                     }
                 });
             }
