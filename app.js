@@ -1299,6 +1299,20 @@ app.get('/admin/posts/:id/edit', requireAuth, (req, res) => {
   res.render('admin/edit', { post, categories, translations, error: null });
 });
 
+// Admin Reset / Re-translate Post Background Endpoint
+app.post('/admin/posts/:id/retranslate', requireAuth, (req, res) => {
+  const post = getOne('SELECT * FROM posts WHERE id = ?', [req.params.id]);
+  if (!post) return res.status(404).send('Artikel tidak ditemukan');
+
+  // Purge existing foreign translation rows for this post from SQLite
+  run('DELETE FROM post_translations WHERE post_id = ? AND lang_code IN ("en", "ar", "fa")', [post.id]);
+
+  // Queue to background worker
+  queuePostPretranslation(post.id);
+
+  res.redirect('/admin');
+});
+
 // Admin Ollama Translation Trigger Endpoint
 app.post('/admin/posts/:id/translate', requireAuth, async (req, res) => {
   const post = getOne('SELECT * FROM posts WHERE id = ?', [req.params.id]);

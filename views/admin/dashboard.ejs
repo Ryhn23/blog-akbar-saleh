@@ -143,23 +143,33 @@
                                         </div>
                                     </td>
                                     <td class="p-3.5 whitespace-nowrap">
-                                        <% if (post.translationStatus && post.translationStatus.is_complete) { %>
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200" title="Terjemahan EN, AR, FA siap di database">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                                                Lengkap (EN, AR, FA)
-                                            </span>
-                                        <% } else if (post.translationStatus && post.translationStatus.is_processing) { %>
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 animate-pulse" title="Sedang diproses di latar belakang">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
-                                                Diproses...
-                                            </span>
-                                        <% } else { %>
-                                            <div class="flex items-center gap-1">
-                                                <span class="px-1.5 py-0.5 rounded text-[10px] <%= (post.translationStatus && post.translationStatus.en) ? 'bg-emerald-100 text-emerald-800 font-bold' : 'bg-gray-100 text-gray-400' %>">EN</span>
-                                                <span class="px-1.5 py-0.5 rounded text-[10px] <%= (post.translationStatus && post.translationStatus.ar) ? 'bg-emerald-100 text-emerald-800 font-bold' : 'bg-gray-100 text-gray-400' %>">AR</span>
-                                                <span class="px-1.5 py-0.5 rounded text-[10px] <%= (post.translationStatus && post.translationStatus.fa) ? 'bg-emerald-100 text-emerald-800 font-bold' : 'bg-gray-100 text-gray-400' %>">FA</span>
-                                            </div>
-                                        <% } %>
+                                        <div class="flex items-center gap-2">
+                                            <% if (post.translationStatus && post.translationStatus.is_complete) { %>
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200" title="Terjemahan EN, AR, FA siap di database">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                                    Lengkap (EN, AR, FA)
+                                                </span>
+                                            <% } else if (post.translationStatus && post.translationStatus.is_processing) { %>
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 animate-pulse" title="Sedang diproses di latar belakang">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                                                    Diproses...
+                                                </span>
+                                            <% } else { %>
+                                                <div class="flex items-center gap-1">
+                                                    <span class="px-1.5 py-0.5 rounded text-[10px] <%= (post.translationStatus && post.translationStatus.en) ? 'bg-emerald-100 text-emerald-800 font-bold' : 'bg-gray-100 text-gray-400' %>">EN</span>
+                                                    <span class="px-1.5 py-0.5 rounded text-[10px] <%= (post.translationStatus && post.translationStatus.ar) ? 'bg-emerald-100 text-emerald-800 font-bold' : 'bg-gray-100 text-gray-400' %>">AR</span>
+                                                    <span class="px-1.5 py-0.5 rounded text-[10px] <%= (post.translationStatus && post.translationStatus.fa) ? 'bg-emerald-100 text-emerald-800 font-bold' : 'bg-gray-100 text-gray-400' %>">FA</span>
+                                                </div>
+                                            <% } %>
+
+                                            <form action="/admin/posts/<%= post.id %>/retranslate" method="POST" class="inline-block" title="Reset & Terjemahkan Ulang Otomatis">
+                                                <button type="submit" class="p-1 rounded text-gray-400 hover:text-emerald-700 hover:bg-emerald-50 transition cursor-pointer" onclick="return confirm('Mulai ulang proses terjemahan untuk artikel ini?');">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                     <td class="p-3.5 text-gray-500 whitespace-nowrap">
                                         <%= new Date(post.created_at).toLocaleDateString('id-ID', { day: 'numeric' ,

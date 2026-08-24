@@ -603,55 +603,82 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Strict Global Mutex for all Ollama LLM requests (Concurrency = 1)
+let globalApiLock = Promise.resolve();
+
+async function withGlobalApiLock(taskFn) {
+  let releaseLock;
+  const nextLock = new Promise(resolve => {
+    releaseLock = resolve;
+  });
+
+  const previousLock = globalApiLock;
+  globalApiLock = previousLock.then(() => nextLock);
+
+  await previousLock;
+
+  try {
+    const res = await taskFn();
+    // Inter-request breathing pause (1.5s) to guarantee zero flooding
+    await sleep(1500);
+    return res;
+  } finally {
+    releaseLock();
+  }
+}
+
 /**
  * Executes an Ollama API call with automatic retry & exponential backoff on 503/429/overload
+ * Enforced strictly through the Global Concurrency = 1 Mutex
  */
 async function callOllamaWithRetry(payload, maxRetries = 3, initialDelayMs = 2500) {
-  let lastError = null;
+  return withGlobalApiLock(async () => {
+    let lastError = null;
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT);
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT);
 
-    try {
-      const response = await fetch(`${OLLAMA_HOST}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
+      try {
+        const response = await fetch(`${OLLAMA_HOST}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
 
-      clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
 
-      if (response.ok) {
-        return await response.json();
-      }
+        if (response.ok) {
+          return await response.json();
+        }
 
-      const errBody = await response.text();
-      
-      // If 503 (Overloaded) or 429 (Rate Limited) or 5xx server error, wait and retry
-      if (response.status === 503 || response.status === 429 || response.status >= 500) {
-        const delay = initialDelayMs * attempt;
-        console.warn(`[Ollama Rate-Limit] Attempt ${attempt}/${maxRetries} got HTTP ${response.status}. Retrying in ${delay}ms...`);
+        const errBody = await response.text();
+        
+        // If 503 (Overloaded) or 429 (Rate Limited) or 5xx server error, wait and retry
+        if (response.status === 503 || response.status === 429 || response.status >= 500) {
+          const delay = initialDelayMs * attempt;
+          console.warn(`[Ollama Rate-Limit] Attempt ${attempt}/${maxRetries} got HTTP ${response.status}. Retrying in ${delay}ms...`);
+          if (attempt < maxRetries) {
+            await sleep(delay);
+            continue;
+          }
+        }
+
+        throw new Error(`Ollama HTTP Error ${response.status}: ${errBody}`);
+      } catch (err) {
+        clearTimeout(timeoutId);
+        lastError = err;
         if (attempt < maxRetries) {
+          const delay = initialDelayMs * attempt;
+          console.warn(`[Ollama Rate-Limit] Attempt ${attempt}/${maxRetries} network error: ${err.message}. Retrying in ${delay}ms...`);
           await sleep(delay);
-          continue;
         }
       }
-
-      throw new Error(`Ollama HTTP Error ${response.status}: ${errBody}`);
-    } catch (err) {
-      clearTimeout(timeoutId);
-      lastError = err;
-      if (attempt < maxRetries) {
-        const delay = initialDelayMs * attempt;
-        console.warn(`[Ollama Rate-Limit] Attempt ${attempt}/${maxRetries} network error: ${err.message}. Retrying in ${delay}ms...`);
-        await sleep(delay);
-      }
     }
-  }
 
-  throw new Error(`Ollama API failed after ${maxRetries} attempts: ${lastError?.message}`);
+    throw new Error(`Ollama API failed after ${maxRetries} attempts: ${lastError?.message}`);
+  });
 }
 
 /**
@@ -779,20 +806,8 @@ Location: ${rawProfile.authorLocation}`;
   const timeoutId = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT);
 
   try {
-    const response = await fetch(`${OLLAMA_HOST}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`Ollama HTTP Error ${response.status}`);
-    }
-
-    const data = await response.json();
-    const parsed = extractJsonFromLlmResponse(data.message.content);
+    const data = await callOllamaWithRetry(payload, 2, 2000);
+    const parsed = extractJsonFromLlmResponse(data.message?.content);
 
     if (parsed) {
       savePageTranslation('site_profile', currentLang, {
@@ -810,7 +825,6 @@ Location: ${rawProfile.authorLocation}`;
       };
     }
   } catch (err) {
-    clearTimeout(timeoutId);
     console.warn(`[Ollama Site Profile Translate Failed for '${currentLang}']:`, err.message);
   }
 
@@ -935,32 +949,18 @@ ${JSON.stringify(catNames)}`;
       options: { temperature: 0.1 }
     };
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT);
-
     try {
-      const response = await fetch(`${OLLAMA_HOST}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const data = await response.json();
-        const parsed = extractJsonFromLlmResponse(data.message.content);
-        if (parsed) {
-          dict = parsed;
-          savePageTranslation('categories_list', currentLang, {
-            title: 'Categories',
-            subtitle: '',
-            content: JSON.stringify(parsed)
-          }, sourceHash);
-        }
+      const data = await callOllamaWithRetry(payload, 2, 2000);
+      const parsed = extractJsonFromLlmResponse(data.message?.content);
+      if (parsed) {
+        dict = parsed;
+        savePageTranslation('categories_list', currentLang, {
+          title: 'Categories',
+          subtitle: '',
+          content: JSON.stringify(parsed)
+        }, sourceHash);
       }
     } catch (err) {
-      clearTimeout(timeoutId);
       console.warn(`[Ollama Categories Translate Failed for '${currentLang}']:`, err.message);
     }
   }
