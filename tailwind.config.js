@@ -30,7 +30,7 @@ module.exports = {
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'Inter', '-apple-system', 'sans-serif'],
         serif: ['Merriweather', 'Georgia', 'serif'],
-        arabic: ['"Amiri"', '"Scheherazade New"', 'serif'],
+        arabic: ['"Amiri"', '"Scheherazade New"', '"Noto Naskh Arabic"', '"Traditional Arabic"', 'serif'],
       }
     },
   },

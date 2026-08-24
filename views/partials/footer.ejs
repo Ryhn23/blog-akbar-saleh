@@ -41,5 +41,46 @@
             </div>
         </div>
     </footer>
+
+    <!-- Global Arabic Text & RTL Script Detector -->
+    <script>
+        (function () {
+            function formatArabicContent() {
+                const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+                
+                document.querySelectorAll('.quill-content p, .quill-content blockquote, .quill-content li, .quill-content h1, .quill-content h2, .quill-content h3, .quill-content h4, .quill-content div').forEach(function (el) {
+                    const text = el.textContent.trim();
+                    if (!text) return;
+                    
+                    let arabicCount = 0;
+                    let latinCount = 0;
+                    for (let i = 0; i < text.length; i++) {
+                        const char = text[i];
+                        if (arabicRegex.test(char)) {
+                            arabicCount++;
+                        } else if (/[a-zA-Z]/.test(char)) {
+                            latinCount++;
+                        }
+                    }
+
+                    // Pure or predominantly Arabic paragraph / quote
+                    if (arabicCount > 0 && (latinCount === 0 || arabicCount >= latinCount * 0.6)) {
+                        el.setAttribute('dir', 'rtl');
+                        if (el.tagName.toLowerCase() === 'blockquote') {
+                            el.classList.add('arabic-quote');
+                        } else {
+                            el.classList.add('arabic-text');
+                        }
+                    }
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', formatArabicContent);
+            } else {
+                formatArabicContent();
+            }
+        })();
+    </script>
 </body>
 </html>
