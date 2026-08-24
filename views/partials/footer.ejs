@@ -48,19 +48,27 @@
             function formatArabicContent() {
                 const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
                 
-                // 1. Merge consecutive/adjacent blockquotes into a single unified block
+                // 1. Merge consecutive/adjacent blockquotes into a single unified card
                 document.querySelectorAll('.quill-content').forEach(function (container) {
                     const blockquotes = Array.from(container.querySelectorAll('blockquote'));
                     for (let i = 0; i < blockquotes.length; i++) {
                         const currentBq = blockquotes[i];
                         if (!currentBq.parentNode) continue;
                         
+                        // Ensure first blockquote contents are wrapped in paragraphs if they were bare text
+                        if (currentBq.childNodes.length > 0 && Array.from(currentBq.childNodes).some(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim())) {
+                            const wrapper = document.createElement('p');
+                            while (currentBq.firstChild) {
+                                wrapper.appendChild(currentBq.firstChild);
+                            }
+                            currentBq.appendChild(wrapper);
+                        }
+
                         let next = currentBq.nextElementSibling;
                         while (next && next.tagName && next.tagName.toLowerCase() === 'blockquote') {
                             const nextSibling = next.nextElementSibling;
                             const p = document.createElement('p');
-                            p.className = 'mt-2.5 mb-1.5 ' + (next.className || '');
-                            if (next.getAttribute('dir')) p.setAttribute('dir', next.getAttribute('dir'));
+                            p.className = next.className || '';
                             
                             while (next.firstChild) {
                                 p.appendChild(next.firstChild);
@@ -72,8 +80,8 @@
                     }
                 });
 
-                // 2. Auto-detect Arabic texts and enforce right-to-left alignment
-                document.querySelectorAll('.quill-content p, .quill-content blockquote, .quill-content li, .quill-content h1, .quill-content h2, .quill-content h3, .quill-content h4, .quill-content div').forEach(function (el) {
+                // 2. Classify and style each paragraph / child inside .quill-content
+                document.querySelectorAll('.quill-content p, .quill-content blockquote > p, .quill-content li, .quill-content h1, .quill-content h2, .quill-content h3, .quill-content h4, .quill-content div').forEach(function (el) {
                     const text = el.textContent.trim();
                     if (!text) return;
                     
@@ -88,16 +96,27 @@
                         }
                     }
 
-                    // Pure or predominantly Arabic paragraph / quote
+                    // A. Pure or predominantly Arabic text (Quranic Verses, Hadith, Arabic Excerpts)
                     if (arabicCount > 0 && (latinCount === 0 || arabicCount >= latinCount * 0.6)) {
                         el.setAttribute('dir', 'rtl');
-                        if (el.tagName.toLowerCase() === 'blockquote') {
-                            el.classList.add('arabic-quote');
-                        } else {
-                            el.classList.add('arabic-text');
+                        el.classList.add('arabic-text');
+                        el.classList.remove('latin-text', 'ql-align-center', 'text-center');
+                    } 
+                    // B. Citation / Source References (e.g. "(QS. ...)", "(Nahj al-Balāghah...)", "(HR. ...)")
+                    else if (text.startsWith('(') && text.endsWith(')')) {
+                        el.classList.add('quote-citation');
+                        el.classList.remove('ql-align-center', 'text-center', 'arabic-text');
+                        if (latinCount > 0) {
+                            el.setAttribute('dir', 'ltr');
                         }
-                        // Remove center alignment on Arabic quotes/verses so they align naturally to the right
-                        el.classList.remove('ql-align-center', 'text-center');
+                    }
+                    // C. Latin Content (Indonesian / English Translations and Narrative)
+                    else {
+                        el.classList.add('latin-text');
+                        el.classList.remove('arabic-text', 'ql-align-center', 'text-center');
+                        if (latinCount > 0) {
+                            el.setAttribute('dir', 'ltr');
+                        }
                     }
                 });
             }

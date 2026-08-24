@@ -36,23 +36,22 @@ body {
 }
 
 /* ==========================================================================
-   ARABIC TYPOGRAPHY SYSTEM (Verses, Hadith, Scholarly Texts)
+   ARABIC & SCHOLARLY TYPOGRAPHY SYSTEM
    ========================================================================== */
 .font-arabic,
 .arabic-text,
 .quill-content .arabic-text,
 .quill-content p.arabic-text,
-.quill-content .ql-direction-rtl,
-.quill-content [dir="rtl"] {
+.quill-content span.arabic-text {
     font-family: 'Amiri', 'Scheherazade New', 'Noto Naskh Arabic', 'Traditional Arabic', serif !important;
-    font-size: 1.55rem;
-    line-height: 2.4;
-    direction: rtl;
-    text-align: right;
+    font-size: 1.55rem !important;
+    line-height: 2.4 !important;
+    direction: rtl !important;
+    text-align: right !important;
     color: #0c2a38;
     font-weight: 500;
-    margin-top: 1rem;
-    margin-bottom: 1.25rem;
+    margin-top: 0.85rem;
+    margin-bottom: 0.85rem;
     letter-spacing: 0;
     font-feature-settings: "cv01", "cv02", "liga", "clig", "calt";
     text-rendering: geometricPrecision;
@@ -60,10 +59,9 @@ body {
 
 /* Inline Arabic Words / Phrases within Latin Text */
 .arabic-inline,
-.quill-content .arabic-inline,
-.quill-content span[dir="rtl"] {
+.quill-content .arabic-inline {
     font-family: 'Amiri', 'Scheherazade New', 'Noto Naskh Arabic', serif !important;
-    font-size: 1.28em;
+    font-size: 1.25em;
     line-height: 1.8;
     direction: rtl;
     display: inline-block;
@@ -141,7 +139,6 @@ body {
     border-left: 4px solid #f59e0b;
     background: linear-gradient(135deg, rgba(254, 243, 199, 0.4) 0%, rgba(255, 251, 235, 0.6) 100%);
     padding: 1.25rem 1.75rem;
-    font-style: italic;
     color: #0c2a38;
     font-family: 'Merriweather', Georgia, serif;
     font-size: 1.075rem;
@@ -173,8 +170,8 @@ body {
 
 /* Paragraphs & Lines inside Blockquote */
 .quill-content blockquote p {
-    margin-top: 0.35rem !important;
-    margin-bottom: 0.35rem !important;
+    margin-top: 0.4rem !important;
+    margin-bottom: 0.4rem !important;
 }
 .quill-content blockquote p:first-child {
     margin-top: 0 !important;
@@ -183,33 +180,48 @@ body {
     margin-bottom: 0 !important;
 }
 
-/* RTL Blockquote (For Arabic quotes) */
-.quill-content blockquote[dir="rtl"],
-.quill-content blockquote.arabic-quote,
-[dir="rtl"] .quill-content blockquote {
+/* Latin translation text inside Blockquote */
+.quill-content blockquote p.latin-text,
+.quill-content blockquote p:not(.arabic-text):not(.quote-citation) {
+    direction: ltr !important;
+    text-align: left !important;
+    font-family: 'Merriweather', Georgia, serif !important;
+    font-size: 1.05rem !important;
+    line-height: 1.85 !important;
+    font-style: italic !important;
+    color: #1e293b !important;
+}
+
+/* Citation line inside Blockquote */
+.quill-content blockquote .quote-citation,
+.quill-content blockquote p.quote-citation {
+    direction: ltr !important;
+    text-align: right !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 0.925rem !important;
+    font-weight: 700 !important;
+    font-style: normal !important;
+    color: #0c2a38 !important;
+    margin-top: 0.75rem !important;
+    opacity: 0.9;
+}
+
+/* RTL Page Support (When website is viewed in Arabic or Persian) */
+html[dir="rtl"] .quill-content blockquote,
+body[dir="rtl"] .quill-content blockquote {
     border-left: 1px solid rgba(245, 158, 11, 0.15) !important;
     border-right: 4px solid #f59e0b !important;
     border-radius: 0.875rem 0 0 0.875rem !important;
     direction: rtl !important;
     text-align: right !important;
-    font-family: 'Amiri', 'Scheherazade New', 'Noto Naskh Arabic', serif !important;
-    font-size: 1.45rem !important;
-    line-height: 2.3 !important;
-    font-style: normal !important;
 }
 
-/* RTL Consecutive Adjacent Blockquotes */
-.quill-content blockquote[dir="rtl"] + blockquote[dir="rtl"],
-.quill-content blockquote.arabic-quote + blockquote.arabic-quote,
-[dir="rtl"] .quill-content blockquote + blockquote {
-    border-top-left-radius: 0 !important;
-    border-top-right-radius: 0 !important;
-}
-.quill-content blockquote[dir="rtl"]:has(+ blockquote[dir="rtl"]),
-.quill-content blockquote.arabic-quote:has(+ blockquote.arabic-quote),
-[dir="rtl"] .quill-content blockquote:has(+ blockquote) {
-    border-bottom-left-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
+html[dir="rtl"] .quill-content blockquote .quote-citation,
+body[dir="rtl"] .quill-content blockquote .quote-citation {
+    direction: rtl !important;
+    text-align: left !important;
+    font-family: 'Amiri', 'Scheherazade New', serif !important;
+    font-size: 1.15rem !important;
 }
 
 /* Strict Alignment Support */
@@ -221,18 +233,6 @@ body {
 }
 .quill-content .ql-align-justify {
     text-align: justify;
-}
-
-/* Always force Right Alignment for Arabic / RTL quotes and verses */
-.arabic-text,
-.quill-content .arabic-text,
-.quill-content p.arabic-text,
-.quill-content [dir="rtl"],
-[dir="rtl"] .quill-content p,
-[dir="rtl"] .quill-content blockquote,
-[dir="rtl"] .quill-content .ql-align-center {
-    direction: rtl !important;
-    text-align: right !important;
 }
 
 .quill-content img {
