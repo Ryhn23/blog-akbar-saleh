@@ -1051,7 +1051,14 @@ function normalizeTranslatedHtml(html) {
   if (!html) return '';
   let text = html.trim();
 
-  // 1. Convert markdown blockquotes (> ...) to HTML <blockquote><p>...</p></blockquote>
+  // 1. Fix malformed <blockquote<em>> or <blockquote<tag>> patterns from LLMs
+  text = text.replace(/<blockquote\s*<\s*em\s*>\s*>?/gi, "<blockquote><p><em>");
+  text = text.replace(/<blockquote\s*<\s*strong\s*>\s*>?/gi, "<blockquote><p><strong>");
+  text = text.replace(/<blockquote\s*<\s*p\s*>\s*>?/gi, "<blockquote><p>");
+  text = text.replace(/<blockquote\s*\*+>\s*>?/gi, "<blockquote><p><em>");
+  text = text.replace(/<blockquote([^>]*)>\s*>\s*/gi, "<blockquote$1><p>");
+
+  // 2. Convert standalone markdown blockquotes (> ...) to HTML <blockquote><p>...</p></blockquote>
   text = text.replace(/(?:^|\r?\n)(>[^\r\n]*(?:\r?\n>[^\r\n]*)*)/g, (match, block) => {
     const clean = block
       .split(/\r?\n/)
@@ -1061,17 +1068,20 @@ function normalizeTranslatedHtml(html) {
     return `\n<blockquote><p>${clean}</p></blockquote>\n`;
   });
 
-  // 2. Convert markdown headers (## ..., ### ...) to <h2>, <h3>
+  // 3. Convert markdown headers (## ..., ### ...) to <h2>, <h3>
   text = text.replace(/(?:^|\r?\n)##\s+([^\r\n]+)/g, '\n<h2>$1</h2>\n');
   text = text.replace(/(?:^|\r?\n)###\s+([^\r\n]+)/g, '\n<h3>$1</h3>\n');
 
-  // 3. Convert markdown bold (**text**) to <strong>
+  // 4. Convert markdown bold (**text**) to <strong>
   text = text.replace(/\*\*([^*\r\n]+)\*\*/g, '<strong>$1</strong>');
 
-  // 4. Convert markdown italics (*text*) to <em>
+  // 5. Convert markdown italics (*text*) to <em>
   text = text.replace(/(?<!\*)\*([^*\r\n]+)\*(?!\*)/g, '<em>$1</em>');
 
-  // 5. Clean empty paragraph tags
+  // 6. Clean and repair unclosed/nested paragraph tags inside blockquotes
+  text = text.replace(/<\/blockquote>/gi, '</p></blockquote>');
+  text = text.replace(/<p>\s*<p>/gi, '<p>');
+  text = text.replace(/<\/p>\s*<\/p>/gi, '</p>');
   text = text.replace(/<p>\s*<\/p>/g, '');
 
   return text.trim();

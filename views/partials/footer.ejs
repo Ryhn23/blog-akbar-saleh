@@ -50,6 +50,19 @@
                 const isRTLDoc = document.documentElement.getAttribute('dir') === 'rtl' || document.documentElement.getAttribute('lang') === 'ar' || document.documentElement.getAttribute('lang') === 'fa';
                 
                 document.querySelectorAll('.quill-content').forEach(function (container) {
+                    // 0. Auto-convert rogue markdown quotes (> ...) in standalone paragraphs into blockquotes
+                    container.querySelectorAll('p, div').forEach(function (el) {
+                        if (el.closest('blockquote')) return;
+                        const rawText = el.textContent.trim();
+                        if (rawText.startsWith('>') || rawText.startsWith('&gt;')) {
+                            const bq = document.createElement('blockquote');
+                            const p = document.createElement('p');
+                            p.innerHTML = el.innerHTML.replace(/^(?:>|&gt;)\s*/, '');
+                            bq.appendChild(p);
+                            el.replaceWith(bq);
+                        }
+                    });
+
                     // 1. Merge adjacent/consecutive blockquotes
                     const bqs = Array.from(container.querySelectorAll('blockquote'));
                     for (let i = 0; i < bqs.length; i++) {
@@ -72,13 +85,13 @@
                         const rawLines = [];
                         bq.childNodes.forEach(function (child) {
                             if (child.nodeType === Node.ELEMENT_NODE && (child.tagName.toLowerCase() === 'p' || child.tagName.toLowerCase() === 'div')) {
-                                const t = child.innerHTML.trim();
+                                let t = child.innerHTML.trim().replace(/^(?:>|&gt;)\s*/, '');
                                 if (t) rawLines.push(t);
                             } else if (child.nodeType === Node.TEXT_NODE) {
-                                const t = child.textContent.trim();
+                                let t = child.textContent.trim().replace(/^(?:>|&gt;)\s*/, '');
                                 if (t) rawLines.push(t);
                             } else if (child.nodeType === Node.ELEMENT_NODE && child.tagName.toLowerCase() !== 'br') {
-                                const t = child.outerHTML.trim();
+                                let t = child.outerHTML.trim().replace(/^(?:>|&gt;)\s*/, '');
                                 if (t) rawLines.push(t);
                             }
                         });
