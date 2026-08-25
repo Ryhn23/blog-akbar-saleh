@@ -119,7 +119,7 @@
                     </div>
 
                     <% if (isLoggedIn) { %>
-                        <a href="/admin" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition shadow-xs">
+                        <a href="/admin" class="text-xs sm:text-sm font-semibold transition-all px-3 py-1.5 rounded-xl <%= currentPath.startsWith('/admin') ? 'bg-[#0c2a38] text-amber-200 shadow-xs' : 'text-gray-700 hover:text-[#0c2a38] hover:bg-gray-100/80' %>">
                             <%= typeof t !== 'undefined' ? t('nav_dashboard') : 'Dasbor' %>
                         </a>
                     <% } %>
@@ -164,7 +164,7 @@
                 <%= typeof t !== 'undefined' ? t('nav_about') : 'Tentang' %>
             </a>
             <% if (isLoggedIn) { %>
-                <a href="/admin" class="block px-3 py-2 rounded-xl bg-amber-600 text-white font-bold">
+                <a href="/admin" class="block px-3 py-2 rounded-xl <%= currentPath.startsWith('/admin') ? 'bg-[#0c2a38] text-amber-200' : 'text-gray-700 hover:bg-gray-50' %>">
                     <%= typeof t !== 'undefined' ? t('nav_dashboard') : 'Dasbor' %>
                 </a>
             <% } %>
