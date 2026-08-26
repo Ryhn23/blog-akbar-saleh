@@ -1071,7 +1071,55 @@ function normalizeTranslatedHtml(html) {
     return `\n<blockquote><p>${clean}</p></blockquote>\n`;
   });
 
-  // 5. Sanitize and balance all HTML tags cleanly using sanitizeHtml
+  // 5. Enforce blockquote boundaries: If an LLM forgot to close <blockquote> and leaked
+  // narrative paragraphs, section headers, or Arabic verses inside <blockquote>,
+  // split them out into standard top-level <p> elements while preserving quotes in <blockquote>.
+  text = text.replace(/<blockquote([^>]*)>([\s\S]*?)<\/blockquote>/gi, (match, attrs, inner) => {
+    const pRegex = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+    let pMatch;
+    const paragraphs = [];
+    while ((pMatch = pRegex.exec(inner)) !== null) {
+      paragraphs.push(pMatch[1].trim());
+    }
+
+    if (paragraphs.length <= 1) {
+      return `<blockquote${attrs}>${inner}</blockquote>`;
+    }
+
+    let result = '';
+    let inBq = false;
+
+    paragraphs.forEach((pText) => {
+      if (!pText) return;
+      
+      const isCitation = /^\(?\s*(?:QS\.|Surat|Surah|سوره|نهج|Nahj)/i.test(pText) || (pText.length < 80 && /\(\s*(?:QS|Surah|Surat|سوره|[0-9]+:[0-9]+)/i.test(pText));
+      const isQuote = /^[“"«'‘]/.test(pText) || (pText.startsWith('<em>') && pText.endsWith('</em>')) || isCitation;
+      const isSectionOrHeader = /<strong>\s*(?:[0-9]+[\.\:]|[IVXLCDM]+[\.\:]|Islam|Reformation|Rejecting|Hijrah|Amar|Jihad|Justice|Ashura|اصلاح|رد|هجرت|امر|جهاد|عدالت|عاشورا)/i.test(pText);
+
+      if (isQuote && !isSectionOrHeader) {
+        if (!inBq) {
+          result += `<blockquote${attrs}><p>${pText}</p>`;
+          inBq = true;
+        } else {
+          result += `<p>${pText}</p>`;
+        }
+      } else {
+        if (inBq) {
+          result += `</blockquote>\n`;
+          inBq = false;
+        }
+        result += `<p>${pText}</p>\n`;
+      }
+    });
+
+    if (inBq) {
+      result += `</blockquote>\n`;
+    }
+
+    return result;
+  });
+
+  // 6. Sanitize and balance all HTML tags cleanly using sanitizeHtml
   try {
     const sanitizeHtml = require('sanitize-html');
     text = sanitizeHtml(text, {
