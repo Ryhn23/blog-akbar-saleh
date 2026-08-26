@@ -6,11 +6,11 @@
         : '' %>>
         <div class="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8">
 
-            <!-- Top 10-Category Navigation Strip (Matching Home Banner Strip) -->
+            <!-- Top 10-Category Navigation Strip (Sticky Under Navbar) -->
             <% if (categories && categories.length> 0) { %>
                 <div
-                    class="mb-8 rounded-2xl sm:rounded-3xl overflow-hidden shadow-md border border-emerald-950/10 bg-[#0a222e]">
-                    <nav aria-label="Kategori Kajian" class="bg-gradient-to-b from-[#0c2a38] to-[#071c26]">
+                    class="sticky top-16 z-40 mb-8 rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg border border-amber-500/20 bg-[#0a222e]/95 backdrop-blur-md transition-all duration-200">
+                    <nav aria-label="Kategori Kajian" class="bg-gradient-to-b from-[#0c2a38]/95 to-[#071c26]/95">
                         <div class="grid grid-cols-5 md:grid-cols-10 divide-x divide-amber-500/15 rtl:divide-x-reverse">
                             <% categories.forEach((cat, index)=> {
                                 const isSelected = selectedCategory === cat.rawCategory;

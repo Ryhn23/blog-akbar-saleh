@@ -6,12 +6,12 @@
 
 html {
     scroll-behavior: smooth;
-    overflow-x: hidden;
+    overflow-x: clip;
     width: 100%;
 }
 
 body {
-    overflow-x: hidden;
+    overflow-x: clip;
     width: 100%;
     background-color: #ffffff;
     color: #1f2937;
