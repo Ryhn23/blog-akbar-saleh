@@ -45,87 +45,20 @@
     <!-- Global Arabic Text, RTL & Continuous Blockquote Merger -->
     <script>
         (function () {
-            function isQuoteElement(el) {
-                if (!el) return false;
-                const t = (el.textContent || '').trim();
-                if (!t) return false;
-                if (/^\(?\s*(?:QS\.|Surat|Surah|سوره|نهج|Nahj)/i.test(t)) return true;
-                if (t.length < 100 && /\(\s*(?:QS|Surah|Surat|سوره|[0-9]+:[0-9]+)/i.test(t)) return true;
-                if (/^[“"«'‘]/.test(t) && /["”»'’]\s*(\([^\)]*\))?$/.test(t)) return true;
-                if (t.length < 250 && /^[“"«'‘]/.test(t)) return true;
-                return false;
-            }
-
             function formatArabicContent() {
                 const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
                 const isRTLDoc = document.documentElement.getAttribute('dir') === 'rtl' || document.documentElement.getAttribute('lang') === 'ar' || document.documentElement.getAttribute('lang') === 'fa';
                 
                 document.querySelectorAll('.quill-content').forEach(function (container) {
-                    // 0. Auto-fix unclosed blockquotes that leaked narrative paragraphs or nested blockquotes inside
-                    container.querySelectorAll('blockquote').forEach(function (bq) {
-                        if (!bq.parentNode) return;
-                        const childNodes = Array.from(bq.childNodes);
-                        let hasLeak = false;
-
-                        for (let i = 0; i < childNodes.length; i++) {
-                            const c = childNodes[i];
-                            if (c.nodeType === Node.ELEMENT_NODE) {
-                                if (c.tagName.toLowerCase() === 'blockquote') {
-                                    hasLeak = true;
-                                    break;
-                                }
-                                if (c.tagName.toLowerCase() === 'p' || c.tagName.toLowerCase() === 'div') {
-                                    if (i > 0 && !isQuoteElement(c)) {
-                                        hasLeak = true;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-
-                        if (hasLeak) {
-                            const parent = bq.parentNode;
-                            let curBq = null;
-                            const newNodes = [];
-
-                            childNodes.forEach(function (child) {
-                                if (child.nodeType === Node.ELEMENT_NODE && child.tagName.toLowerCase() === 'blockquote') {
-                                    curBq = null;
-                                    newNodes.push(child);
-                                } else if (child.nodeType === Node.ELEMENT_NODE && (child.tagName.toLowerCase() === 'p' || child.tagName.toLowerCase() === 'div')) {
-                                    if (isQuoteElement(child)) {
-                                        if (!curBq) {
-                                            curBq = document.createElement('blockquote');
-                                            newNodes.push(curBq);
-                                        }
-                                        curBq.appendChild(child);
-                                    } else {
-                                        curBq = null;
-                                        newNodes.push(child);
-                                    }
-                                } else if (child.nodeType === Node.TEXT_NODE && child.textContent.trim()) {
-                                    const p = document.createElement('p');
-                                    p.textContent = child.textContent.trim();
-                                    if (isQuoteElement(p)) {
-                                        if (!curBq) {
-                                            curBq = document.createElement('blockquote');
-                                            newNodes.push(curBq);
-                                        }
-                                        curBq.appendChild(p);
-                                    } else {
-                                        curBq = null;
-                                        newNodes.push(p);
-                                    }
-                                }
-                            });
-
-                            newNodes.forEach(function (n) {
-                                parent.insertBefore(n, bq);
-                            });
-                            bq.remove();
+                    // 1. Un-nest any accidentally nested blockquotes in the DOM
+                    container.querySelectorAll('blockquote blockquote').forEach(function (innerBq) {
+                        const outerBq = innerBq.closest('blockquote');
+                        if (outerBq && outerBq.parentNode) {
+                            outerBq.parentNode.insertBefore(innerBq, outerBq.nextSibling);
                         }
                     });
-                    // 1. Merge strictly adjacent blockquotes (from Quill multi-line blockquotes)
+
+                    // 2. Merge strictly adjacent blockquotes (from Quill multi-line blockquotes)
                     const bqs = Array.from(container.querySelectorAll('blockquote'));
                     for (let i = 0; i < bqs.length; i++) {
                         const currentBq = bqs[i];
@@ -142,7 +75,7 @@
                         }
                     }
 
-                    // 2. Classify and format lines inside blockquotes
+                    // 3. Classify and format lines inside blockquotes
                     container.querySelectorAll('blockquote').forEach(function (bq) {
                         const rawLines = [];
                         bq.childNodes.forEach(function (child) {
@@ -151,9 +84,6 @@
                                 if (t) rawLines.push(t);
                             } else if (child.nodeType === Node.TEXT_NODE) {
                                 const t = child.textContent.trim();
-                                if (t) rawLines.push(t);
-                            } else if (child.nodeType === Node.ELEMENT_NODE && child.tagName.toLowerCase() !== 'br') {
-                                const t = child.outerHTML.trim();
                                 if (t) rawLines.push(t);
                             }
                         });
@@ -174,26 +104,21 @@
                                 }
 
                                 if (isRTLDoc) {
-                                    if (arabicCount > 0 && (latinCount === 0 || arabicCount >= latinCount * 0.5)) {
+                                    if (arabicCount > 0 && arabicCount >= latinCount * 0.6) {
                                         p.className = 'arabic-text';
-                                        p.setAttribute('dir', 'rtl');
-                                    } else if ((text.startsWith('(') && text.endsWith(')')) || text.includes('سوره') || text.includes('نهج') || text.startsWith('QS.')) {
-                                        p.className = 'quote-citation';
                                         p.setAttribute('dir', 'rtl');
                                     } else {
                                         p.className = 'latin-text';
                                         p.setAttribute('dir', 'rtl');
                                     }
                                 } else {
-                                    if (arabicCount > 0 && (latinCount === 0 || arabicCount >= latinCount * 0.5)) {
+                                    if (arabicCount > 0 && arabicCount >= latinCount * 0.6) {
                                         p.className = 'arabic-text';
                                         p.setAttribute('dir', 'rtl');
-                                    } else if ((text.startsWith('(') && text.endsWith(')')) || text.startsWith('QS.') || text.startsWith('Surat') || text.includes('Nahj al-')) {
+                                    } else if ((text.startsWith('(') && text.endsWith(')')) || text.includes('QS.') || text.includes('Surat') || text.includes('Surah') || text.includes('سوره')) {
                                         p.className = 'quote-citation';
-                                        p.setAttribute('dir', (arabicCount > 0) ? 'rtl' : 'ltr');
                                     } else {
                                         p.className = 'latin-text';
-                                        p.setAttribute('dir', 'ltr');
                                     }
                                 }
                                 bq.appendChild(p);
@@ -201,8 +126,8 @@
                         }
                     });
 
-                    // 3. Process standalone elements outside blockquotes
-                    container.querySelectorAll('p, div, h1, h2, h3, h4, li').forEach(function (el) {
+                    // 4. Standalone elements Arabic detection (for Quran verses & Hadith outside quotes)
+                    container.querySelectorAll('p, h1, h2, h3, h4, li').forEach(function (el) {
                         if (el.closest('blockquote')) return;
                         const text = el.textContent.trim();
                         if (!text) return;
@@ -215,31 +140,18 @@
                         }
 
                         if (isRTLDoc) {
-                            el.setAttribute('dir', 'rtl');
-                            if (arabicCount > 0 && (latinCount === 0 || arabicCount >= latinCount * 0.5)) {
+                            if (arabicCount > 0 && arabicCount >= latinCount * 0.5) {
                                 el.classList.add('arabic-text');
-                                el.style.fontFamily = '';
-                                el.querySelectorAll('span, em, strong, font').forEach(function(s) {
-                                    s.style.fontFamily = '';
-                                    s.classList.remove('ql-font-serif', 'ql-font-monospace');
-                                });
                             }
                         } else {
                             if (arabicCount > 0 && (latinCount === 0 || arabicCount >= latinCount * 0.5)) {
                                 el.classList.add('arabic-text');
-                                el.classList.remove('ql-align-center', 'text-center');
                                 el.setAttribute('dir', 'rtl');
-                                el.style.fontFamily = '';
-                                el.querySelectorAll('span, em, strong, font').forEach(function(s) {
-                                    s.style.fontFamily = '';
-                                    s.classList.remove('ql-font-serif', 'ql-font-monospace');
-                                });
                             } else if (arabicCount > 0) {
                                 el.querySelectorAll('span').forEach(function(s) {
                                     const sText = s.textContent.trim();
                                     if (sText && arabicRegex.test(sText)) {
                                         s.classList.add('arabic-inline');
-                                        s.style.fontFamily = '';
                                     }
                                 });
                             }

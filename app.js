@@ -42,7 +42,8 @@ const {
   queuePostPretranslation,
   queuePagePretranslation,
   warmupTranslationCache,
-  getTranslationStatus
+  getTranslationStatus,
+  normalizeTranslatedHtml
 } = require('./services/ollama-translator');
 
 const app = express();
@@ -635,7 +636,7 @@ app.get('/about', async (req, res) => {
     if (trans) {
       activePage.title = trans.title || page.title;
       activePage.subtitle = trans.subtitle || page.subtitle;
-      activePage.content = trans.content || page.content;
+      activePage.content = normalizeTranslatedHtml(trans.content) || page.content;
       isTranslated = true;
     }
   }
@@ -865,7 +866,7 @@ app.get('/blog/:slug', async (req, res) => {
     if (trans && trans.title && trans.content) {
       activePost.title = trans.title;
       activePost.meta_description = trans.meta_description;
-      activePost.content = trans.content;
+      activePost.content = normalizeTranslatedHtml(trans.content);
       activePost.category = trans.category || post.category;
       activePost.reading_time = trans.reading_time || post.reading_time;
       isTranslated = true;
@@ -1054,7 +1055,7 @@ app.get('/blog/:slug/pdf', async (req, res) => {
     if (trans && trans.title && trans.content) {
       activePost.title = trans.title;
       activePost.meta_description = trans.meta_description;
-      activePost.content = trans.content;
+      activePost.content = normalizeTranslatedHtml(trans.content);
       activePost.category = trans.category || post.category;
     }
   }

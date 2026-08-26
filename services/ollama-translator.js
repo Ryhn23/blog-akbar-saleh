@@ -1078,20 +1078,30 @@ function normalizeTranslatedHtml(html) {
   // 5. Convert markdown italics (*text*) to <em>
   text = text.replace(/(?<!\*)\*([^*\r\n]+)\*(?!\*)/g, '<em>$1</em>');
 
-  // 6. Clean and repair unclosed/nested paragraph tags inside blockquotes
-  text = text.replace(/<\/blockquote>/gi, '</p></blockquote>');
-  text = text.replace(/<p>\s*<p>/gi, '<p>');
-  text = text.replace(/<\/p>\s*<\/p>/gi, '</p>');
-  text = text.replace(/<p>\s*<\/p>/g, '');
+  // 6. Un-nest accidentally nested blockquotes
+  let prev = '';
+  while (prev !== text) {
+    prev = text;
+    text = text.replace(/<blockquote>([\s\S]*?)<blockquote>([\s\S]*?)<\/blockquote>([\s\S]*?)<\/blockquote>/gi, (match, before, inner, after) => {
+      let res = '';
+      if (before.trim()) res += `<blockquote>${before.trim()}</blockquote>\n`;
+      if (inner.trim()) res += `<blockquote>${inner.trim()}</blockquote>\n`;
+      if (after.trim()) res += `<p>${after.trim()}</p>\n`;
+      return res;
+    });
+  }
 
-  // 7. Un-nest accidentally nested blockquotes
-  text = text.replace(/<blockquote>([\s\S]*?)<blockquote>([\s\S]*?)<\/blockquote>([\s\S]*?)<\/blockquote>/gi, (match, before, inner, after) => {
-    let res = '';
-    if (before.trim()) res += `<blockquote>${before.trim()}</blockquote>\n`;
-    if (inner.trim()) res += `<blockquote>${inner.trim()}</blockquote>\n`;
-    if (after.trim()) res += `<p>${after.trim()}</p>\n`;
-    return res;
-  });
+  // 7. Sanitize and balance all HTML tags cleanly using sanitizeHtml
+  try {
+    const sanitizeHtml = require('sanitize-html');
+    text = sanitizeHtml(text, {
+      allowedTags: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'p', 'a', 'ul', 'ol', 'li', 'b', 'i', 'strong', 'em', 'strike', 'code', 'hr', 'br', 'div', 'span'],
+      allowedAttributes: {
+        'a': ['href', 'name', 'target', 'rel'],
+        '*': ['class', 'dir', 'style']
+      }
+    });
+  } catch (e) {}
 
   return text.trim();
 }
@@ -1559,6 +1569,7 @@ module.exports = {
   UI_DICTIONARY,
   t,
   splitHtmlIntoSections,
+  normalizeTranslatedHtml,
   getOrTranslateSiteProfile,
   getOrTranslateCategories,
   localizePostAsync,
