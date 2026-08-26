@@ -1084,6 +1084,15 @@ function normalizeTranslatedHtml(html) {
   text = text.replace(/<\/p>\s*<\/p>/gi, '</p>');
   text = text.replace(/<p>\s*<\/p>/g, '');
 
+  // 7. Un-nest accidentally nested blockquotes
+  text = text.replace(/<blockquote>([\s\S]*?)<blockquote>([\s\S]*?)<\/blockquote>([\s\S]*?)<\/blockquote>/gi, (match, before, inner, after) => {
+    let res = '';
+    if (before.trim()) res += `<blockquote>${before.trim()}</blockquote>\n`;
+    if (inner.trim()) res += `<blockquote>${inner.trim()}</blockquote>\n`;
+    if (after.trim()) res += `<p>${after.trim()}</p>\n`;
+    return res;
+  });
+
   return text.trim();
 }
 
@@ -1176,11 +1185,14 @@ async function translatePostToLanguage(post, targetLang) {
     const systemPrompt = `You are a distinguished academic translator specializing in Islamic studies, classical jurisprudence (fiqh), philosophy, and religious literature.
 Your task is to translate an Indonesian Islamic scholarly article into ${langConfig.promptTarget}.
 
-CRITICAL PRESERVATION & FORMATTING RULES:
+CRITICAL PRESERVATION & STRUCTURAL INTEGRITY RULES:
 1. OUTPUT STRICT HTML ONLY:
    - NEVER use markdown syntax (DO NOT write '>', '##', '###', '**', '-', '1.').
    - You MUST preserve all HTML tags EXACTLY as they appear in the original text: <p>, <h2>, <h3>, <blockquote>, <strong>, <em>, <ul>, <ol>, <li>, <a>, etc.
-   - Verse translations and author quotations MUST remain inside <blockquote><p>...</p></blockquote> tags.
+   - BLOCKQUOTE & QUOTE INTEGRITY (CRITICAL):
+     * Every <blockquote> MUST be closed with </blockquote> immediately after the single translated verse or quotation.
+     * NEVER nest a <blockquote> inside another <blockquote>.
+     * NEVER wrap normal narrative paragraphs or explanatory commentary inside <blockquote>. All regular explanations and paragraphs MUST remain outside inside standard <p>...</p> tags.
 2. PRESERVATION OF SHIELDED PLACEHOLDERS:
    - If you see placeholders like __ARABIC_TOKEN_0__, __ARABIC_TOKEN_1__, etc., KEEP THEM EXACTLY AS-IS in their original locations. Do NOT translate, modify, or remove them.
 3. ${CONTEXTUAL_TRANSLATION_GUIDELINES}
