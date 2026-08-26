@@ -45,11 +45,86 @@
     <!-- Global Arabic Text, RTL & Continuous Blockquote Merger -->
     <script>
         (function () {
+            function isQuoteElement(el) {
+                if (!el) return false;
+                const t = (el.textContent || '').trim();
+                if (!t) return false;
+                if (/^\(?\s*(?:QS\.|Surat|Surah|سوره|نهج|Nahj)/i.test(t)) return true;
+                if (t.length < 100 && /\(\s*(?:QS|Surah|Surat|سوره|[0-9]+:[0-9]+)/i.test(t)) return true;
+                if (/^[“"«'‘]/.test(t) && /["”»'’]\s*(\([^\)]*\))?$/.test(t)) return true;
+                if (t.length < 250 && /^[“"«'‘]/.test(t)) return true;
+                return false;
+            }
+
             function formatArabicContent() {
                 const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
                 const isRTLDoc = document.documentElement.getAttribute('dir') === 'rtl' || document.documentElement.getAttribute('lang') === 'ar' || document.documentElement.getAttribute('lang') === 'fa';
                 
                 document.querySelectorAll('.quill-content').forEach(function (container) {
+                    // 0. Auto-fix unclosed blockquotes that leaked narrative paragraphs or nested blockquotes inside
+                    container.querySelectorAll('blockquote').forEach(function (bq) {
+                        if (!bq.parentNode) return;
+                        const childNodes = Array.from(bq.childNodes);
+                        let hasLeak = false;
+
+                        for (let i = 0; i < childNodes.length; i++) {
+                            const c = childNodes[i];
+                            if (c.nodeType === Node.ELEMENT_NODE) {
+                                if (c.tagName.toLowerCase() === 'blockquote') {
+                                    hasLeak = true;
+                                    break;
+                                }
+                                if (c.tagName.toLowerCase() === 'p' || c.tagName.toLowerCase() === 'div') {
+                                    if (i > 0 && !isQuoteElement(c)) {
+                                        hasLeak = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (hasLeak) {
+                            const parent = bq.parentNode;
+                            let curBq = null;
+                            const newNodes = [];
+
+                            childNodes.forEach(function (child) {
+                                if (child.nodeType === Node.ELEMENT_NODE && child.tagName.toLowerCase() === 'blockquote') {
+                                    curBq = null;
+                                    newNodes.push(child);
+                                } else if (child.nodeType === Node.ELEMENT_NODE && (child.tagName.toLowerCase() === 'p' || child.tagName.toLowerCase() === 'div')) {
+                                    if (isQuoteElement(child)) {
+                                        if (!curBq) {
+                                            curBq = document.createElement('blockquote');
+                                            newNodes.push(curBq);
+                                        }
+                                        curBq.appendChild(child);
+                                    } else {
+                                        curBq = null;
+                                        newNodes.push(child);
+                                    }
+                                } else if (child.nodeType === Node.TEXT_NODE && child.textContent.trim()) {
+                                    const p = document.createElement('p');
+                                    p.textContent = child.textContent.trim();
+                                    if (isQuoteElement(p)) {
+                                        if (!curBq) {
+                                            curBq = document.createElement('blockquote');
+                                            newNodes.push(curBq);
+                                        }
+                                        curBq.appendChild(p);
+                                    } else {
+                                        curBq = null;
+                                        newNodes.push(p);
+                                    }
+                                }
+                            });
+
+                            newNodes.forEach(function (n) {
+                                parent.insertBefore(n, bq);
+                            });
+                            bq.remove();
+                        }
+                    });
                     // 1. Merge strictly adjacent blockquotes (from Quill multi-line blockquotes)
                     const bqs = Array.from(container.querySelectorAll('blockquote'));
                     for (let i = 0; i < bqs.length; i++) {
