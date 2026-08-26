@@ -527,21 +527,29 @@ app.get('/blog', async (req, res) => {
   const authorRole = process.env.AUTHOR_ROLE || 'Pengasuh Pondok Pesantren Khatamun Nabiyyin Jakarta';
   const targetLang = req.currentLang || res.locals.currentLang || (req.query.lang || 'id').toLowerCase();
   const { q, category } = req.query;
-  let sql = 'SELECT * FROM posts WHERE is_published = 1 AND is_hidden = 0';
+  let sql = `
+    SELECT DISTINCT p.*
+    FROM posts p
+    LEFT JOIN post_translations pt ON pt.post_id = p.id
+    WHERE p.is_published = 1 AND p.is_hidden = 0
+  `;
   const params = [];
 
   if (category) {
-    sql += ' AND category = ?';
-    params.push(category);
+    sql += ' AND (p.category = ? OR pt.category = ?)';
+    params.push(category, category);
   }
 
-  if (q) {
-    sql += ' AND (title LIKE ? OR content LIKE ? OR meta_description LIKE ?)';
-    const searchPattern = `%${q}%`;
-    params.push(searchPattern, searchPattern, searchPattern);
+  if (q && q.trim()) {
+    const searchPattern = `%${q.trim()}%`;
+    sql += ` AND (
+      p.title LIKE ? OR p.content LIKE ? OR p.meta_description LIKE ?
+      OR pt.title LIKE ? OR pt.content LIKE ? OR pt.meta_description LIKE ?
+    )`;
+    params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
   }
 
-  sql += ' ORDER BY created_at DESC';
+  sql += ' ORDER BY p.created_at DESC';
 
   const rawPosts = getAll(sql, params);
   const rawCategories = getAll(`
