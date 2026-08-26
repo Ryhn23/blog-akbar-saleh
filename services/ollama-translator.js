@@ -1051,14 +1051,17 @@ function normalizeTranslatedHtml(html) {
   if (!html) return '';
   let text = html.trim();
 
-  // 1. Fix malformed <blockquote<em>> or <blockquote<tag>> patterns from LLMs
-  text = text.replace(/<blockquote\s*<\s*em\s*>\s*>?/gi, "<blockquote><p><em>");
-  text = text.replace(/<blockquote\s*<\s*strong\s*>\s*>?/gi, "<blockquote><p><strong>");
-  text = text.replace(/<blockquote\s*<\s*p\s*>\s*>?/gi, "<blockquote><p>");
-  text = text.replace(/<blockquote\s*\*+>\s*>?/gi, "<blockquote><p><em>");
-  text = text.replace(/<blockquote([^>]*)>\s*>\s*/gi, "<blockquote$1><p>");
+  // 1. Convert markdown headers (## ..., ### ...) to <h2>, <h3>
+  text = text.replace(/(?:^|\r?\n)##\s+([^\r\n]+)/g, '\n<h2>$1</h2>\n');
+  text = text.replace(/(?:^|\r?\n)###\s+([^\r\n]+)/g, '\n<h3>$1</h3>\n');
 
-  // 2. Convert standalone markdown blockquotes (> ...) to HTML <blockquote><p>...</p></blockquote>
+  // 2. Convert markdown bold (**text**) to <strong>
+  text = text.replace(/\*\*([^*\r\n]+)\*\*/g, '<strong>$1</strong>');
+
+  // 3. Convert markdown italics (*text*) to <em>
+  text = text.replace(/(?<!\*)\*([^*\r\n]+)\*(?!\*)/g, '<em>$1</em>');
+
+  // 4. Convert standalone markdown blockquotes (> ...) to HTML <blockquote><p>...</p></blockquote>
   text = text.replace(/(?:^|\r?\n)(>[^\r\n]*(?:\r?\n>[^\r\n]*)*)/g, (match, block) => {
     const clean = block
       .split(/\r?\n/)
@@ -1068,30 +1071,7 @@ function normalizeTranslatedHtml(html) {
     return `\n<blockquote><p>${clean}</p></blockquote>\n`;
   });
 
-  // 3. Convert markdown headers (## ..., ### ...) to <h2>, <h3>
-  text = text.replace(/(?:^|\r?\n)##\s+([^\r\n]+)/g, '\n<h2>$1</h2>\n');
-  text = text.replace(/(?:^|\r?\n)###\s+([^\r\n]+)/g, '\n<h3>$1</h3>\n');
-
-  // 4. Convert markdown bold (**text**) to <strong>
-  text = text.replace(/\*\*([^*\r\n]+)\*\*/g, '<strong>$1</strong>');
-
-  // 5. Convert markdown italics (*text*) to <em>
-  text = text.replace(/(?<!\*)\*([^*\r\n]+)\*(?!\*)/g, '<em>$1</em>');
-
-  // 6. Un-nest accidentally nested blockquotes
-  let prev = '';
-  while (prev !== text) {
-    prev = text;
-    text = text.replace(/<blockquote>([\s\S]*?)<blockquote>([\s\S]*?)<\/blockquote>([\s\S]*?)<\/blockquote>/gi, (match, before, inner, after) => {
-      let res = '';
-      if (before.trim()) res += `<blockquote>${before.trim()}</blockquote>\n`;
-      if (inner.trim()) res += `<blockquote>${inner.trim()}</blockquote>\n`;
-      if (after.trim()) res += `<p>${after.trim()}</p>\n`;
-      return res;
-    });
-  }
-
-  // 7. Sanitize and balance all HTML tags cleanly using sanitizeHtml
+  // 5. Sanitize and balance all HTML tags cleanly using sanitizeHtml
   try {
     const sanitizeHtml = require('sanitize-html');
     text = sanitizeHtml(text, {
