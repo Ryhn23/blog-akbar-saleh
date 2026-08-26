@@ -45,98 +45,12 @@
     <!-- Global Arabic Text, RTL & Continuous Blockquote Merger -->
     <script>
         (function () {
-            function isLikelyQuoteText(text) {
-                const t = text.trim();
-                if (!t) return false;
-                if (/^[“"«'‘]|["”»'’]$/.test(t)) return true;
-                if (/^\(?\s*(?:QS\.|Surat|Surah|سوره|نهج|Nahj)/i.test(t)) return true;
-                if (/[\u0600-\u06FF]/.test(t)) return true;
-                if (t.length < 160 && /\(\s*(?:QS|Surah|Surat|سوره|[0-9]+:[0-9]+)/i.test(t)) return true;
-                return false;
-            }
-
             function formatArabicContent() {
                 const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
                 const isRTLDoc = document.documentElement.getAttribute('dir') === 'rtl' || document.documentElement.getAttribute('lang') === 'ar' || document.documentElement.getAttribute('lang') === 'fa';
                 
                 document.querySelectorAll('.quill-content').forEach(function (container) {
-                    // 0. Auto-convert rogue markdown quotes (> ...) in standalone paragraphs into blockquotes
-                    container.querySelectorAll('p, div').forEach(function (el) {
-                        if (el.closest('blockquote')) return;
-                        const rawText = el.textContent.trim();
-                        if (rawText.startsWith('>') || rawText.startsWith('&gt;')) {
-                            const bq = document.createElement('blockquote');
-                            const p = document.createElement('p');
-                            p.innerHTML = el.innerHTML.replace(/^(?:>|&gt;)\s*/, '');
-                            bq.appendChild(p);
-                            el.replaceWith(bq);
-                        }
-                    });
-
-                    // 1. Un-nest accidentally nested blockquotes & extract non-quote narrative paragraphs
-                    container.querySelectorAll('blockquote').forEach(function (bq) {
-                        if (!bq.parentNode) return;
-                        const childNodes = Array.from(bq.childNodes);
-                        const hasNestedBq = bq.querySelector('blockquote') !== null;
-                        let hasNarrative = false;
-
-                        childNodes.forEach(function (child) {
-                            if (child.nodeType === Node.ELEMENT_NODE && (child.tagName.toLowerCase() === 'p' || child.tagName.toLowerCase() === 'div')) {
-                                const text = child.textContent.trim();
-                                if (text && !isLikelyQuoteText(text)) {
-                                    hasNarrative = true;
-                                }
-                            }
-                        });
-
-                        if (hasNestedBq || hasNarrative) {
-                            const fragments = [];
-                            let curBq = null;
-
-                            childNodes.forEach(function (child) {
-                                if (child.nodeType === Node.ELEMENT_NODE && child.tagName.toLowerCase() === 'blockquote') {
-                                    curBq = null;
-                                    fragments.push(child);
-                                } else if (child.nodeType === Node.ELEMENT_NODE && (child.tagName.toLowerCase() === 'p' || child.tagName.toLowerCase() === 'div')) {
-                                    const text = child.textContent.trim();
-                                    if (text && isLikelyQuoteText(text)) {
-                                        if (!curBq) {
-                                            curBq = document.createElement('blockquote');
-                                            fragments.push(curBq);
-                                        }
-                                        curBq.appendChild(child);
-                                    } else if (text) {
-                                        curBq = null;
-                                        fragments.push(child);
-                                    }
-                                } else if (child.nodeType === Node.TEXT_NODE && child.textContent.trim()) {
-                                    const text = child.textContent.trim();
-                                    const p = document.createElement('p');
-                                    p.textContent = text;
-                                    if (isLikelyQuoteText(text)) {
-                                        if (!curBq) {
-                                            curBq = document.createElement('blockquote');
-                                            fragments.push(curBq);
-                                        }
-                                        curBq.appendChild(p);
-                                    } else {
-                                        curBq = null;
-                                        fragments.push(p);
-                                    }
-                                }
-                            });
-
-                            if (fragments.length > 0) {
-                                const parent = bq.parentNode;
-                                fragments.forEach(function (frag) {
-                                    parent.insertBefore(frag, bq);
-                                });
-                                bq.remove();
-                            }
-                        }
-                    });
-
-                    // 2. Merge adjacent/consecutive blockquotes
+                    // 1. Merge strictly adjacent blockquotes (from Quill multi-line blockquotes)
                     const bqs = Array.from(container.querySelectorAll('blockquote'));
                     for (let i = 0; i < bqs.length; i++) {
                         const currentBq = bqs[i];
@@ -153,18 +67,18 @@
                         }
                     }
 
-                    // 2. Normalize and classify lines inside all blockquotes
+                    // 2. Classify and format lines inside blockquotes
                     container.querySelectorAll('blockquote').forEach(function (bq) {
                         const rawLines = [];
                         bq.childNodes.forEach(function (child) {
                             if (child.nodeType === Node.ELEMENT_NODE && (child.tagName.toLowerCase() === 'p' || child.tagName.toLowerCase() === 'div')) {
-                                let t = child.innerHTML.trim().replace(/^(?:>|&gt;)\s*/, '');
+                                const t = child.innerHTML.trim();
                                 if (t) rawLines.push(t);
                             } else if (child.nodeType === Node.TEXT_NODE) {
-                                let t = child.textContent.trim().replace(/^(?:>|&gt;)\s*/, '');
+                                const t = child.textContent.trim();
                                 if (t) rawLines.push(t);
                             } else if (child.nodeType === Node.ELEMENT_NODE && child.tagName.toLowerCase() !== 'br') {
-                                let t = child.outerHTML.trim().replace(/^(?:>|&gt;)\s*/, '');
+                                const t = child.outerHTML.trim();
                                 if (t) rawLines.push(t);
                             }
                         });
@@ -214,7 +128,7 @@
 
                     // 3. Process standalone elements outside blockquotes
                     container.querySelectorAll('p, div, h1, h2, h3, h4, li').forEach(function (el) {
-                        if (el.closest('blockquote')) return; // already formatted in blockquote pass
+                        if (el.closest('blockquote')) return;
                         const text = el.textContent.trim();
                         if (!text) return;
 
@@ -246,7 +160,6 @@
                                     s.classList.remove('ql-font-serif', 'ql-font-monospace');
                                 });
                             } else if (arabicCount > 0) {
-                                // Inline Arabic phrases inside mixed Latin paragraphs
                                 el.querySelectorAll('span').forEach(function(s) {
                                     const sText = s.textContent.trim();
                                     if (sText && arabicRegex.test(sText)) {
