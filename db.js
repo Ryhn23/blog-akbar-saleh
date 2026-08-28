@@ -20,7 +20,8 @@ function calculateReadingTime(htmlOrText) {
   if (!htmlOrText) return 1;
   const cleanText = htmlOrText.replace(/<[^>]+>/g, ' ').trim();
   const wordCount = cleanText.split(/\s+/).filter(Boolean).length;
-  const wordsPerMinute = 200;
+  // Kecepatan membaca kajian ilmiah & reflektif (memberikan waktu cukup untuk memahami teks Arab, dalil, dan perenungan): 120 kata per menit
+  const wordsPerMinute = 120;
   const minutes = Math.ceil(wordCount / wordsPerMinute);
   return minutes > 0 ? minutes : 1;
 }
@@ -236,6 +237,25 @@ function initDB() {
     db.prepare("UPDATE posts SET category = 'Refleksi' WHERE category = 'Opini & Pandangan' OR category = 'Pendidikan Pesantren'").run();
     db.prepare("UPDATE posts SET category = 'Filsafat' WHERE category = 'Filsafat & Tasawuf'").run();
     db.prepare("UPDATE posts SET category = 'Pemikiran Islam' WHERE category = 'Artikel Ilmiah'").run();
+  } catch (_) {}
+
+  // Recalculate reading times for existing posts and translations to match reflective reading speed
+  try {
+    const allPosts = db.prepare('SELECT id, content FROM posts').all();
+    const updatePostStmt = db.prepare('UPDATE posts SET reading_time = ? WHERE id = ?');
+    allPosts.forEach(p => {
+      if (p.content) {
+        updatePostStmt.run(calculateReadingTime(p.content), p.id);
+      }
+    });
+
+    const allTrans = db.prepare('SELECT id, content FROM post_translations').all();
+    const updateTransStmt = db.prepare('UPDATE post_translations SET reading_time = ? WHERE id = ?');
+    allTrans.forEach(t => {
+      if (t.content) {
+        updateTransStmt.run(calculateReadingTime(t.content), t.id);
+      }
+    });
   } catch (_) {}
 
   // Create Login Lockouts Table for Progressive Brute-Force Protection
