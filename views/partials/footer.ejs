@@ -42,7 +42,7 @@
         </div>
     </footer>
 
-    <!-- Global Arabic Text, RTL & Continuous Blockquote Merger -->
+    <!-- Global Arabic Text & RTL Styling System (Non-Destructive) -->
     <script>
         (function () {
             function formatArabicContent() {
@@ -50,85 +50,8 @@
                 const isRTLDoc = document.documentElement.getAttribute('dir') === 'rtl' || document.documentElement.getAttribute('lang') === 'ar' || document.documentElement.getAttribute('lang') === 'fa';
                 
                 document.querySelectorAll('.quill-content').forEach(function (container) {
-                    // 1. Un-nest any accidentally nested blockquotes in the DOM
-                    container.querySelectorAll('blockquote blockquote').forEach(function (innerBq) {
-                        const outerBq = innerBq.closest('blockquote');
-                        if (outerBq && outerBq.parentNode) {
-                            outerBq.parentNode.insertBefore(innerBq, outerBq.nextSibling);
-                        }
-                    });
-
-                    // 2. Merge strictly adjacent blockquotes (from Quill multi-line blockquotes)
-                    const bqs = Array.from(container.querySelectorAll('blockquote'));
-                    for (let i = 0; i < bqs.length; i++) {
-                        const currentBq = bqs[i];
-                        if (!currentBq.parentNode) continue;
-                        
-                        let next = currentBq.nextElementSibling;
-                        while (next && next.tagName && next.tagName.toLowerCase() === 'blockquote') {
-                            const nextSibling = next.nextElementSibling;
-                            while (next.firstChild) {
-                                currentBq.appendChild(next.firstChild);
-                            }
-                            next.remove();
-                            next = nextSibling;
-                        }
-                    }
-
-                    // 3. Classify and format lines inside blockquotes
-                    container.querySelectorAll('blockquote').forEach(function (bq) {
-                        const rawLines = [];
-                        bq.childNodes.forEach(function (child) {
-                            if (child.nodeType === Node.ELEMENT_NODE && (child.tagName.toLowerCase() === 'p' || child.tagName.toLowerCase() === 'div')) {
-                                const t = child.innerHTML.trim();
-                                if (t) rawLines.push(t);
-                            } else if (child.nodeType === Node.TEXT_NODE) {
-                                const t = child.textContent.trim();
-                                if (t) rawLines.push(t);
-                            }
-                        });
-
-                        if (rawLines.length > 0) {
-                            bq.innerHTML = '';
-                            rawLines.forEach(function (lineHtml) {
-                                const p = document.createElement('p');
-                                p.innerHTML = lineHtml;
-                                const text = p.textContent.trim();
-                                if (!text) return;
-
-                                let arabicCount = 0;
-                                let latinCount = 0;
-                                for (let c = 0; c < text.length; c++) {
-                                    if (arabicRegex.test(text[c])) arabicCount++;
-                                    else if (/[a-zA-Z]/.test(text[c])) latinCount++;
-                                }
-
-                                if (isRTLDoc) {
-                                    if (arabicCount > 0 && arabicCount >= latinCount * 0.6) {
-                                        p.className = 'arabic-text';
-                                        p.setAttribute('dir', 'rtl');
-                                    } else {
-                                        p.className = 'latin-text';
-                                        p.setAttribute('dir', 'rtl');
-                                    }
-                                } else {
-                                    if (arabicCount > 0 && arabicCount >= latinCount * 0.6) {
-                                        p.className = 'arabic-text';
-                                        p.setAttribute('dir', 'rtl');
-                                    } else if ((text.startsWith('(') && text.endsWith(')')) || text.includes('QS.') || text.includes('Surat') || text.includes('Surah') || text.includes('سوره')) {
-                                        p.className = 'quote-citation';
-                                    } else {
-                                        p.className = 'latin-text';
-                                    }
-                                }
-                                bq.appendChild(p);
-                            });
-                        }
-                    });
-
-                    // 4. Standalone elements Arabic detection (for Quran verses & Hadith outside quotes)
-                    container.querySelectorAll('p, h1, h2, h3, h4, li').forEach(function (el) {
-                        if (el.closest('blockquote')) return;
+                    // Safe non-destructive Arabic typography detection
+                    container.querySelectorAll('p, h1, h2, h3, h4, li, blockquote p, blockquote em').forEach(function (el) {
                         const text = el.textContent.trim();
                         if (!text) return;
 
