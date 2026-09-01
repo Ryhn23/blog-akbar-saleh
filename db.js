@@ -261,15 +261,15 @@ function initDB() {
     });
   } catch (_) {}
 
-  // Feed/Inject baseline view counters realistis untuk postingan terdahulu yang masih 0 atau sangat sedikit
+  // Feed/Inject baseline view counters realistis untuk website baru (~1 minggu): rentang 90 - 391 pembaca
   try {
-    const legacyPosts = db.prepare('SELECT id, is_featured FROM posts WHERE views IS NULL OR views <= 5').all();
+    const legacyPosts = db.prepare('SELECT id, is_featured FROM posts WHERE views IS NULL OR views <= 5 OR views > 391').all();
     const updateViewsStmt = db.prepare('UPDATE posts SET views = ? WHERE id = ?');
     legacyPosts.forEach(p => {
-      // Angka alami: postingan biasa 185 - 890 pembaca, postingan unggulan/featured 850 - 2.450 pembaca
+      // Postingan standar: 90 - 275 pembaca, Postingan unggulan: 276 - 391 pembaca
       const isFeatured = p.is_featured === 1;
-      const minViews = isFeatured ? 850 : 185;
-      const maxViews = isFeatured ? 2450 : 890;
+      const minViews = isFeatured ? 276 : 90;
+      const maxViews = isFeatured ? 391 : 275;
       const randomViews = Math.floor(Math.random() * (maxViews - minViews + 1)) + minViews;
       updateViewsStmt.run(randomViews, p.id);
     });
