@@ -848,8 +848,26 @@ app.get('/blog/:slug', async (req, res) => {
     return res.status(404).render('404');
   }
 
+  // Counter pembaca artikel dengan proteksi refresh (Session-based)
+  if (!req.session.viewedPosts) {
+    req.session.viewedPosts = [];
+  }
+  const userAgent = req.headers['user-agent'] || '';
+  const isBot = /bot|crawler|spider|crawling|lighthouse|headless/i.test(userAgent);
+
+  // Jika bukan bot dan artikel belum pernah dibaca dalam sesi ini, tambahkan +1
+  if (!isBot && !req.session.viewedPosts.includes(post.id)) {
+    try {
+      run('UPDATE posts SET views = COALESCE(views, 0) + 1 WHERE id = ?', [post.id]);
+      req.session.viewedPosts.push(post.id);
+      post.views = (post.views || 0) + 1;
+    } catch (e) {
+      console.warn('Gagal menambah counter views:', e.message);
+    }
+  }
+
   const targetLang = req.currentLang || res.locals.currentLang || (req.query.lang || 'id').toLowerCase();
-  let activePost = { ...post };
+  let activePost = { ...post, views: post.views || 0 };
   let isTranslated = false;
   let translationError = null;
 

@@ -105,6 +105,12 @@ const UI_DICTIONARY = {
     ar: 'دقائق للقراءة',
     fa: 'دقیقه مطالعه'
   },
+  times_read: {
+    id: 'kali dibaca',
+    en: 'reads',
+    ar: 'قراءة',
+    fa: 'بازدید'
+  },
   search_placeholder: {
     id: 'Cari judul atau topik kajian...',
     en: 'Search articles, topics or keywords...',

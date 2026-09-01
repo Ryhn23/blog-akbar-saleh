@@ -67,7 +67,7 @@
 
                     <!-- Article Header -->
                     <header class="mb-8 pb-6 border-b border-gray-100" <%- (typeof isRtl !== 'undefined' && isRtl) ? 'dir="rtl"' : '' %>>
-                        <div class="flex items-center gap-2 text-xs text-gray-500 font-medium mb-3">
+                        <div class="flex items-center flex-wrap gap-2 text-xs text-gray-500 font-medium mb-3">
                             <a href="/blog?category=<%= encodeURIComponent(post.category || 'Kajian') %><%= (typeof targetLang !== 'undefined' && targetLang !== 'id') ? '&lang=' + targetLang : '' %>"
                                 class="px-2.5 py-0.5 rounded-md bg-[#0c2a38] text-amber-200 border border-amber-500/20 font-bold uppercase tracking-wider text-[10px] hover:brightness-110">
                                 <%= post.category || 'Kajian' %>
@@ -79,6 +79,14 @@
                             <span>•</span>
                             <span>
                                 <%= post.reading_time || 1 %> <%= t('min_read') %>
+                            </span>
+                            <span>•</span>
+                            <span class="inline-flex items-center gap-1 text-gray-500">
+                                <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <span><%= (post.views || 0).toLocaleString('id-ID') %> <%= t('times_read') %></span>
                             </span>
                         </div>
 
