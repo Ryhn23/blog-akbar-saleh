@@ -834,8 +834,53 @@ app.get('/auth/logout', (req, res) => {
   res.redirect(returnTo);
 });
 
+// Auto-Boost Logic: setiap 5 menit bertambah 4-7 views secara acak selama 1 s.d. 1.5 jam pertama setelah artikel dipublish
+function processAutoBoostViews() {
+  try {
+    const now = Date.now();
+    const activeBoostPosts = getAll(
+      'SELECT id, views, auto_boost_until, last_boosted_at FROM posts WHERE is_published = 1 AND auto_boost_until IS NOT NULL'
+    );
+
+    for (const p of activeBoostPosts) {
+      const autoBoostUntil = Number(p.auto_boost_until);
+      const lastBoostedAt = Number(p.last_boosted_at) || (autoBoostUntil - 90 * 60 * 1000);
+
+      const effectiveNow = Math.min(now, autoBoostUntil);
+      const diffMs = effectiveNow - lastBoostedAt;
+      const intervalMs = 5 * 60 * 1000; // 5 menit
+      const intervals = Math.floor(diffMs / intervalMs);
+
+      if (intervals >= 1) {
+        let addedViews = 0;
+        for (let i = 0; i < intervals; i++) {
+          // Menambah 4 sampai 7 pembaca secara acak per interval 5 menit
+          addedViews += Math.floor(Math.random() * 4) + 4;
+        }
+
+        const newLastBoosted = lastBoostedAt + (intervals * intervalMs);
+        const isFinished = effectiveNow >= autoBoostUntil;
+
+        run(
+          'UPDATE posts SET views = COALESCE(views, 0) + ?, last_boosted_at = ?, auto_boost_until = ? WHERE id = ?',
+          [addedViews, newLastBoosted, isFinished ? null : autoBoostUntil, p.id]
+        );
+      } else if (now >= autoBoostUntil) {
+        run('UPDATE posts SET auto_boost_until = NULL WHERE id = ?', [p.id]);
+      }
+    }
+  } catch (err) {
+    console.error('[AutoBoost Views Error]:', err.message);
+  }
+}
+
+// Background scheduler untuk auto-boost views (cek setiap 60 detik)
+setInterval(processAutoBoostViews, 60 * 1000);
+setTimeout(processAutoBoostViews, 3000);
+
 // Single Post Page (Supports Ollama Hybrid Multi-Language: ID, EN, AR, FA)
 app.get('/blog/:slug', async (req, res) => {
+  processAutoBoostViews();
   const post = getOne('SELECT * FROM posts WHERE slug = ?', [req.params.slug]);
   if (!post) {
     return res.status(404).render('404');
@@ -1296,11 +1341,24 @@ app.post('/admin/posts', requireAuth, postUploadMiddleware, (req, res) => {
   const hidden = is_hidden === '1' || is_hidden === 'on' ? 1 : 0;
   const postCategory = category?.trim() || 'Kajian Keislaman';
 
+  const now = Date.now();
+  let first_published_at = null;
+  let auto_boost_until = null;
+  let last_boosted_at = null;
+
+  if (published === 1) {
+    first_published_at = new Date(now).toISOString();
+    // Durasi auto-boost: 60 s.d. 90 menit (1 sampai 1.5 jam)
+    const boostMinutes = 60 + Math.floor(Math.random() * 31);
+    auto_boost_until = now + (boostMinutes * 60 * 1000);
+    last_boosted_at = now;
+  }
+
   try {
     const insertResult = run(
-      `INSERT INTO posts (title, slug, content, meta_description, category, cover_image, is_featured, is_published, is_hidden, reading_time, attachment_url, attachment_name, attachment_size)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [title, slug, content, meta_description, postCategory, cover_image, featured, published, hidden, reading_time, attachment_url, attachment_name, attachment_size]
+      `INSERT INTO posts (title, slug, content, meta_description, category, cover_image, is_featured, is_published, is_hidden, reading_time, attachment_url, attachment_name, attachment_size, first_published_at, auto_boost_until, last_boosted_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [title, slug, content, meta_description, postCategory, cover_image, featured, published, hidden, reading_time, attachment_url, attachment_name, attachment_size, first_published_at, auto_boost_until, last_boosted_at]
     );
     const newPostId = insertResult.lastInsertRowid;
     if (newPostId) {
@@ -1519,12 +1577,25 @@ app.post('/admin/posts/:id', requireAuth, postUploadMiddleware, (req, res) => {
   const hidden = is_hidden === '1' || is_hidden === 'on' ? 1 : 0;
   const postCategory = category?.trim() || 'Umum';
 
+  let first_published_at = post.first_published_at;
+  let auto_boost_until = post.auto_boost_until;
+  let last_boosted_at = post.last_boosted_at;
+
+  // Jika artikel diubah dari draf menjadi terbit untuk pertama kali
+  if (post.is_published === 0 && published === 1 && !post.first_published_at) {
+    const now = Date.now();
+    const boostMinutes = 60 + Math.floor(Math.random() * 31);
+    auto_boost_until = now + (boostMinutes * 60 * 1000);
+    last_boosted_at = now;
+    first_published_at = new Date(now).toISOString();
+  }
+
   try {
     run(
       `UPDATE posts 
-       SET title = ?, slug = ?, content = ?, meta_description = ?, category = ?, cover_image = ?, is_featured = ?, is_published = ?, is_hidden = ?, reading_time = ?, attachment_url = ?, attachment_name = ?, attachment_size = ?, updated_at = CURRENT_TIMESTAMP 
+       SET title = ?, slug = ?, content = ?, meta_description = ?, category = ?, cover_image = ?, is_featured = ?, is_published = ?, is_hidden = ?, reading_time = ?, attachment_url = ?, attachment_name = ?, attachment_size = ?, first_published_at = ?, auto_boost_until = ?, last_boosted_at = ?, updated_at = CURRENT_TIMESTAMP 
        WHERE id = ?`,
-      [title, slug, content, meta_description, postCategory, cover_image, featured, published, hidden, reading_time, attachment_url, attachment_name, attachment_size, req.params.id]
+      [title, slug, content, meta_description, postCategory, cover_image, featured, published, hidden, reading_time, attachment_url, attachment_name, attachment_size, first_published_at, auto_boost_until, last_boosted_at, req.params.id]
     );
     queuePostPretranslation(req.params.id);
     res.redirect('/admin');
@@ -1538,10 +1609,26 @@ app.post('/admin/posts/:id', requireAuth, postUploadMiddleware, (req, res) => {
 
 // Quick Toggle Published Status (Publish / Draft)
 app.post('/admin/posts/:id/toggle-publish', requireAuth, (req, res) => {
-  const post = getOne('SELECT id, is_published FROM posts WHERE id = ?', [req.params.id]);
+  const post = getOne('SELECT id, is_published, first_published_at, auto_boost_until, last_boosted_at FROM posts WHERE id = ?', [req.params.id]);
   if (post) {
     const newStatus = post.is_published === 1 ? 0 : 1;
-    run('UPDATE posts SET is_published = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [newStatus, post.id]);
+    let first_published_at = post.first_published_at;
+    let auto_boost_until = post.auto_boost_until;
+    let last_boosted_at = post.last_boosted_at;
+
+    // Jika diaktifkan pertama kali
+    if (newStatus === 1 && !post.first_published_at) {
+      const now = Date.now();
+      const boostMinutes = 60 + Math.floor(Math.random() * 31);
+      auto_boost_until = now + (boostMinutes * 60 * 1000);
+      last_boosted_at = now;
+      first_published_at = new Date(now).toISOString();
+    }
+
+    run(
+      'UPDATE posts SET is_published = ?, first_published_at = ?, auto_boost_until = ?, last_boosted_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [newStatus, first_published_at, auto_boost_until, last_boosted_at, post.id]
+    );
     if (newStatus === 1) {
       queuePostPretranslation(post.id);
     }

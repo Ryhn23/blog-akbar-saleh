@@ -81,6 +81,9 @@ function initDB() {
       is_hidden INTEGER DEFAULT 0,
       reading_time INTEGER DEFAULT 1,
       views INTEGER DEFAULT 0,
+      first_published_at DATETIME,
+      auto_boost_until INTEGER,
+      last_boosted_at INTEGER,
       attachment_url TEXT,
       attachment_name TEXT,
       attachment_size INTEGER DEFAULT 0,
@@ -96,9 +99,13 @@ function initDB() {
   try { db.exec('ALTER TABLE posts ADD COLUMN is_published INTEGER DEFAULT 1'); } catch (e) {}
   try { db.exec('ALTER TABLE posts ADD COLUMN is_hidden INTEGER DEFAULT 0'); } catch (e) {}
   try { db.exec('ALTER TABLE posts ADD COLUMN views INTEGER DEFAULT 0'); } catch (e) {}
+  try { db.exec('ALTER TABLE posts ADD COLUMN first_published_at DATETIME'); } catch (e) {}
+  try { db.exec('ALTER TABLE posts ADD COLUMN auto_boost_until INTEGER'); } catch (e) {}
+  try { db.exec('ALTER TABLE posts ADD COLUMN last_boosted_at INTEGER'); } catch (e) {}
   try { db.exec('UPDATE posts SET is_published = 1 WHERE is_published IS NULL'); } catch (e) {}
   try { db.exec('UPDATE posts SET is_hidden = 0 WHERE is_hidden IS NULL'); } catch (e) {}
   try { db.exec('UPDATE posts SET views = 0 WHERE views IS NULL'); } catch (e) {}
+  try { db.exec("UPDATE posts SET first_published_at = created_at WHERE is_published = 1 AND first_published_at IS NULL"); } catch (e) {}
 
   // Create Comments Table
   db.exec(`
